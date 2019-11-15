@@ -1,4 +1,4 @@
-module Page exposing (Page(..), view)
+module Page exposing (Page(..), simpleView, view)
 
 import Browser exposing (Document)
 import Html exposing (Attribute, Html, a, div, i, li, nav, text, ul)
@@ -15,10 +15,21 @@ type Page
     | Register
 
 
-view : Page -> { title : String, content : Html msg } -> Document msg
-view currentPage { title, content } =
+simpleView : Page -> { title : String, content : Html msg } -> Document msg
+simpleView currentPage { title, content } =
     { title = title ++ " — Conduit"
     , body = viewLayout content currentPage
+    }
+
+
+view : Page -> (subMsg -> msg) -> { title : String, content : Html subMsg } -> Document msg
+view currentPage toMsg config =
+    let
+        basePage =
+            simpleView currentPage config
+    in
+    { title = basePage.title
+    , body = List.map (Html.map toMsg) basePage.body
     }
 
 

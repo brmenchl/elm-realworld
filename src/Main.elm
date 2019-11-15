@@ -1,6 +1,6 @@
 module Main exposing (main)
 
-import Browser
+import Browser exposing (Document)
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Page exposing (Page(..))
@@ -33,28 +33,28 @@ toSession model =
         NotFound session ->
             session
 
-        Home homeModel ->
-            Home.toSession homeModel
+        Home home ->
+            Home.toSession home
 
-        Login loginModel ->
-            Login.toSession loginModel
+        Login login ->
+            Login.toSession login
 
 
 
 -- VIEW
 
 
-view : Model -> Browser.Document msg
+view : Model -> Document Msg
 view model =
     case model of
         NotFound _ ->
-            Page.view Page.Other NotFound.view
+            Page.simpleView Page.Other NotFound.view
 
-        Home _ ->
-            Page.view Page.Home Home.view
+        Home home ->
+            Page.view Page.Home HomeMsg (Home.view home)
 
-        Login _ ->
-            Page.view Page.Login Login.view
+        Login login ->
+            Page.view Page.Login LoginMsg (Login.view login)
 
 
 
@@ -64,6 +64,8 @@ view model =
 type Msg
     = ClickedLink Browser.UrlRequest
     | ChangedUrl Url
+    | LoginMsg Login.Msg
+    | HomeMsg Home.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -86,6 +88,17 @@ update msg model =
         ( ChangedUrl url, _ ) ->
             updateRoute (Route.fromUrl url) model
 
+        ( HomeMsg submsg, Home home ) ->
+            subUpdate Home HomeMsg <|
+                Home.update submsg home
+
+        ( LoginMsg submsg, Login login ) ->
+            subUpdate Login LoginMsg <|
+                Login.update submsg login
+
+        ( _, _ ) ->
+            ( model, Cmd.none )
+
 
 updateRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
 updateRoute maybeRoute model =
@@ -98,15 +111,15 @@ updateRoute maybeRoute model =
             ( NotFound session, Cmd.none )
 
         Just Route.Home ->
-            initPage Home (Home.init session)
+            subUpdate Home HomeMsg (Home.init session)
 
         Just Route.Login ->
-            initPage Login (Login.init session)
+            subUpdate Login LoginMsg (Login.init session)
 
 
-initPage : (subModel -> Model) -> ( subModel, Cmd Msg ) -> ( Model, Cmd Msg )
-initPage toModel ( subModel, subMessage ) =
-    ( toModel subModel, subMessage )
+subUpdate : (subModel -> Model) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+subUpdate toModel toMsg ( subModel, subCmd ) =
+    ( toModel subModel, Cmd.map toMsg subCmd )
 
 
 main : Program () Model Msg

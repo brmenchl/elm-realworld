@@ -1,4 +1,4 @@
-module Page.Home exposing (Model, init, toSession, view)
+module Page.Home exposing (Model, Msg, init, toSession, update, view)
 
 import Html exposing (Html, a, button, div, h1, i, img, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, src)
@@ -10,7 +10,7 @@ type alias Model =
     }
 
 
-init : Session -> ( Model, Cmd msg )
+init : Session -> ( Model, Cmd Msg )
 init session =
     ( Model session, Cmd.none )
 
@@ -20,8 +20,17 @@ toSession model =
     model.session
 
 
-view : { title : String, content : Html msg }
-view =
+type Msg
+    = Test
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    ( model, Cmd.none )
+
+
+view : Model -> { title : String, content : Html msg }
+view _ =
     { title = "Home"
     , content = content
     }
