@@ -12,6 +12,6 @@ view =
         main_ [ id "content", class "container", tabindex -1 ]
             [ h1 [] [ text "Not Found" ]
             , div [ class "row" ]
-                [ img [ Asset.src "error.jpg" ] [] ]
+                [ img [ Asset.src Asset.error ] [] ]
             ]
     }
