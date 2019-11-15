@@ -9,7 +9,6 @@ import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string, top)
 
 type Route
     = Home
-    | Root
     | Login
 
 
@@ -44,9 +43,6 @@ toPathParams : Route -> List String
 toPathParams route =
     case route of
         Home ->
-            []
-
-        Root ->
             []
 
         Login ->

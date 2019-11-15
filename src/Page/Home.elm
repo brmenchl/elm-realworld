@@ -1,11 +1,23 @@
-module Page.Home exposing (Model, view)
+module Page.Home exposing (Model, init, toSession, view)
 
 import Html exposing (Html, a, button, div, h1, i, img, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, src)
+import Session exposing (Session)
 
 
 type alias Model =
-    {}
+    { session : Session
+    }
+
+
+init : Session -> ( Model, Cmd msg )
+init session =
+    ( Model session, Cmd.none )
+
+
+toSession : Model -> Session
+toSession model =
+    model.session
 
 
 view : { title : String, content : Html msg }

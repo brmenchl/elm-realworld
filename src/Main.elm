@@ -3,8 +3,9 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
-import Page
+import Page exposing (Page(..))
 import Page.Home as Home
+import Page.Login as Login
 import Page.NotFound as NotFound
 import Route exposing (Route)
 import Session exposing (Session)
@@ -17,7 +18,8 @@ import Url exposing (Url)
 
 type Model
     = NotFound Session
-    | Home Session
+    | Home Home.Model
+    | Login Login.Model
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -31,8 +33,11 @@ toSession model =
         NotFound session ->
             session
 
-        Home session ->
-            session
+        Home homeModel ->
+            Home.toSession homeModel
+
+        Login loginModel ->
+            Login.toSession loginModel
 
 
 
@@ -43,10 +48,13 @@ view : Model -> Browser.Document msg
 view model =
     case model of
         NotFound _ ->
-            Page.view NotFound.view
+            Page.view Page.Other NotFound.view
 
         Home _ ->
-            Page.view Home.view
+            Page.view Page.Home Home.view
+
+        Login _ ->
+            Page.view Page.Login Login.view
 
 
 
@@ -90,10 +98,16 @@ updateRoute maybeRoute model =
             ( NotFound session, Cmd.none )
 
         Just Route.Home ->
-            ( Home session, Cmd.none )
+            initPage Home (Home.init session)
 
-        Just _ ->
-            ( NotFound session, Cmd.none )
+        Just Route.Login ->
+            initPage Login (Login.init session)
+
+
+initPage : (subModel -> Model) -> ( subModel, Cmd Msg ) -> ( Model, Cmd Msg )
+initPage toModel ( subModel, subMessage ) =
+    ( toModel subModel, subMessage )
+
 
 main : Program () Model Msg
 main =

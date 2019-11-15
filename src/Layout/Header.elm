@@ -1,38 +1,26 @@
 module Layout.Header exposing (viewHeader)
 
 import Html exposing (Attribute, Html, a, div, i, li, nav, text, ul)
-import Html.Attributes exposing (class, href)
+import Html.Attributes exposing (class, classList, href)
 import Route exposing (Route(..))
-import View.Icon exposing (Icon, icon)
+import View.Icon exposing (Icon(..), icon)
 
 
-viewHeader : Html msg
-viewHeader =
+viewHeader : Page -> Html msg
+viewHeader currentPage =
+    let
+        foo =
+            navLink currentPage
+    in
     nav [ class "navbar navbar-light" ]
         [ div [ class "container" ]
             [ a [ class "navbar-brand", Route.toHref Route.Home ]
                 [ text "conduit" ]
             , ul [ class "nav navbar-nav pull-xs-right" ]
-                [ li [ class "nav-item" ]
-                    [ a [ class "nav-link active", Route.toHref Route.Home ]
-                        [ text "Home" ]
-                    ]
-                , li [ class "nav-item" ]
-                    [ a [ class "nav-link", Route.toHref Route.Login ]
-                        [ i [ class "ion-compose" ] []
-                        , text "New Post"
-                        ]
-                    ]
-                , li [ class "nav-item" ]
-                    [ a [ class "nav-link", Route.toHref Route.Login ]
-                        [ i [ class "ion-gear-a" ] []
-                        , text "Settings"
-                        ]
-                    ]
-                , li [ class "nav-item" ]
-                    [ a [ class "nav-link", Route.toHref Route.Login ]
-                        [ text "Sign up" ]
-                    ]
+                [ foo Route.Home "Home" Nothing
+                , foo Route.Login "New Post" (Just (Icon "ion-compose"))
+                , foo Route.Login "Settings" (Just (Icon "ion-gear-a"))
+                , foo Route.Login "Sign up" Nothing
                 ]
             ]
         ]
@@ -40,16 +28,10 @@ viewHeader =
 
 navLinkClass : Route -> Route -> Attribute msg
 navLinkClass route currentRoute =
-    class <|
-        String.join
-            ""
-            [ "nav-link"
-            , if currentRoute == route then
-                "active"
-
-              else
-                ""
-            ]
+    classList
+        [ ( "nav-link", True )
+        , ( "active", currentRoute == route )
+        ]
 
 
 navLink : Route -> Route -> String -> Maybe Icon -> Html msg
