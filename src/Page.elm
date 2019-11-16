@@ -1,8 +1,8 @@
 module Page exposing (Page(..), simpleView, view)
 
 import Browser exposing (Document)
-import Html exposing (Attribute, Html, a, div, i, li, nav, text, ul)
-import Html.Attributes exposing (class, classList, href)
+import Html exposing (Html, a, div, li, nav, text, ul)
+import Html.Attributes exposing (class, classList)
 import Layout.Footer exposing (viewFooter)
 import Route exposing (Route(..))
 import View.Icon exposing (icon)
@@ -35,7 +35,10 @@ view currentPage toMsg config =
 
 viewLayout : Html msg -> Page -> List (Html msg)
 viewLayout content currentPage =
-    viewHeader currentPage :: content :: [ viewFooter ]
+    [ viewHeader currentPage
+    , content
+    , viewFooter
+    ]
 
 
 viewHeader : Page -> Html msg

@@ -1,6 +1,6 @@
 module View.Icon exposing (icon)
 
-import Html exposing (Attribute, Html, i)
+import Html exposing (Html, i)
 import Html.Attributes exposing (class)
 
 

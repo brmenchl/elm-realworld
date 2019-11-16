@@ -1,7 +1,7 @@
 module Layout.Header exposing (viewHeader)
 
-import Html exposing (Attribute, Html, a, div, i, li, nav, text, ul)
-import Html.Attributes exposing (class, classList, href)
+import Html exposing (Attribute, Html, a, div, li, nav, text, ul)
+import Html.Attributes exposing (class, classList)
 import Route exposing (Route(..))
 import View.Icon exposing (Icon(..), icon)
 

@@ -5,14 +5,12 @@ import Html.Attributes exposing (class, href, src)
 import Session exposing (Session)
 
 
-type alias Model =
-    { session : Session
-    }
+type alias Model = Session
 
 
 init : Session -> ( Model, Cmd Msg )
 init session =
-    ( Model session, Cmd.none )
+    ( session, Cmd.none )
 
 
 toSession : Model -> Session
@@ -20,12 +18,11 @@ toSession model =
     model.session
 
 
-type Msg
-    = Test
+type alias Msg = String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update _ model =
     ( model, Cmd.none )
 
 
