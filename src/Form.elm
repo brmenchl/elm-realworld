@@ -53,10 +53,10 @@ required subjectToString fieldName =
     Validator
         (\subject ->
             let
-                value =
-                    subjectToString subject
+                trimmedValue =
+                    subjectToString subject |> trim
             in
-            if String.isEmpty value then
+            if String.isEmpty trimmedValue then
                 [ requiredErrorMessage fieldName ]
 
             else
@@ -85,10 +85,10 @@ atMostMaximum subjectToString fieldName maximum =
     Validator
         (\subject ->
             let
-                value =
-                    subjectToString subject
+                trimmedValue =
+                    subjectToString subject |> trim
             in
-            if String.length value > maximum then
+            if String.length trimmedValue > maximum then
                 [ maximumErrorMessage fieldName maximum ]
 
             else
@@ -122,3 +122,12 @@ pluralize singular plural number =
 
     else
         plural
+
+
+
+-- Helper
+
+
+trim : String -> String
+trim subject =
+    String.trim subject
