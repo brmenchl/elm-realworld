@@ -1,6 +1,6 @@
-module Page.Login exposing (Model, Msg, init, toSession, update, view)
+module Page.Register exposing (Model, Msg, init, toSession, update, view)
 
-import Form exposing (Validator, all, required, validate)
+import Form exposing (Validator, all, atLeastMinimum, atMostMaximum, firstOf, required, validate)
 import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, text, ul)
 import Html.Attributes exposing (class, placeholder, type_)
 import Html.Events exposing (onInput, onSubmit)
@@ -19,9 +19,11 @@ type alias Model =
 type Problem
     = ClientError String
 
+
 type alias Form =
     { email : String
     , password : String
+    , username : String
     }
 
 
@@ -29,7 +31,7 @@ init : Session -> ( Model, Cmd msg )
 init session =
     ( { session = session
       , problems = []
-      , form = Form "" ""
+      , form = Form "" "" ""
       }
     , Cmd.none
     )
@@ -42,6 +44,7 @@ toSession model =
 
 type Msg
     = SubmittedForm
+    | ChangedUsername String
     | ChangedEmail String
     | ChangedPassword String
 
@@ -51,6 +54,11 @@ formValidator =
     all
         [ required .email "Email"
         , required .password "Password"
+        , firstOf
+            [ required .username "Username"
+            , atLeastMinimum .username "Username" 2
+            , atMostMaximum .username "Username" 20
+            ]
         ]
 
 
@@ -64,6 +72,9 @@ update msg model =
 
                 Err problems ->
                     ( { model | problems = List.map ClientError problems }, Cmd.none )
+
+        ChangedUsername username ->
+            updateForm (\form -> { form | username = username }) model
 
         ChangedEmail email ->
             updateForm (\form -> { form | email = email }) model
@@ -79,7 +90,7 @@ updateForm updater model =
 
 view : Model -> { title : String, content : Html Msg }
 view model =
-    { title = "Sign In"
+    { title = "Sign Up"
     , content = content model
     }
 
@@ -91,14 +102,18 @@ content model =
             [ div [ class "row" ]
                 [ div [ class "col-md-6 offset-md-3 col-xs-12" ]
                     [ h1 [ class "text-xs-center" ]
-                        [ text "Sign in" ]
+                        [ text "Sign up" ]
                     , p [ class "text-xs-center" ]
-                        [ a [ toHref Route.Register ]
-                            [ text "Need an account?" ]
+                        [ a [ toHref Route.Login ]
+                            [ text "Have an account?" ]
                         ]
                     , viewErrors model.problems
                     , form [ onSubmit SubmittedForm ]
                         [ fieldset [ class "form-group" ]
+                            [ input [ class "form-control form-control-lg", type_ "text", placeholder "Your Name", onInput ChangedUsername ]
+                                []
+                            ]
+                        , fieldset [ class "form-group" ]
                             [ input [ class "form-control form-control-lg", type_ "text", placeholder "Email", onInput ChangedEmail ]
                                 []
                             ]
@@ -107,7 +122,7 @@ content model =
                                 []
                             ]
                         , button [ class "btn btn-lg btn-primary pull-xs-right" ]
-                            [ text "Sign in" ]
+                            [ text "Sign up" ]
                         ]
                     ]
                 ]

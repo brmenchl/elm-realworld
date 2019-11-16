@@ -1,15 +1,15 @@
 module Route exposing (Route(..), fromUrl, toHref)
 
-import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
 import Url exposing (Url)
-import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string, top)
+import Url.Parser as Parser exposing (Parser, oneOf, s, top)
 
 
 type Route
     = Home
     | Login
+    | Register
 
 
 parser : Parser (Route -> a) a
@@ -17,6 +17,7 @@ parser =
     oneOf
         [ Parser.map Home top
         , Parser.map Login <| s "login"
+        , Parser.map Register <| s "register"
         ]
 
 
@@ -47,3 +48,6 @@ toPathParams route =
 
         Login ->
             [ "login" ]
+
+        Register ->
+            [ "register" ]

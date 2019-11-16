@@ -2,11 +2,11 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
-import Html exposing (..)
 import Page exposing (Page(..))
 import Page.Home as Home
 import Page.Login as Login
 import Page.NotFound as NotFound
+import Page.Register as Register
 import Route exposing (Route)
 import Session exposing (Session)
 import Url exposing (Url)
@@ -20,6 +20,7 @@ type Model
     = NotFound Session
     | Home Home.Model
     | Login Login.Model
+    | Register Register.Model
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -39,6 +40,9 @@ toSession model =
         Login login ->
             Login.toSession login
 
+        Register register ->
+            Register.toSession register
+
 
 
 -- VIEW
@@ -56,6 +60,9 @@ view model =
         Login login ->
             Page.view Page.Login LoginMsg (Login.view login)
 
+        Register register ->
+            Page.view Page.Register RegisterMsg (Register.view register)
+
 
 
 -- UPDATE
@@ -66,6 +73,7 @@ type Msg
     | ChangedUrl Url
     | LoginMsg Login.Msg
     | HomeMsg Home.Msg
+    | RegisterMsg Register.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -96,6 +104,10 @@ update msg model =
             subUpdate Login LoginMsg <|
                 Login.update submsg login
 
+        ( RegisterMsg submsg, Register register ) ->
+            subUpdate Register RegisterMsg <|
+                Register.update submsg register
+
         ( _, _ ) ->
             ( model, Cmd.none )
 
@@ -115,6 +127,9 @@ updateRoute maybeRoute model =
 
         Just Route.Login ->
             subUpdate Login LoginMsg (Login.init session)
+
+        Just Route.Register ->
+            subUpdate Register RegisterMsg (Register.init session)
 
 
 subUpdate : (subModel -> Model) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
