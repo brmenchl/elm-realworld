@@ -1,35 +1,34 @@
 module Page.Login exposing (Model, Msg, init, toSession, update, view)
 
+import Api exposing (decodeErrors)
+import Api.Login exposing (RequestResponse, loginRequest)
 import Form exposing (Validator, all, required, validate)
 import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, text, ul)
 import Html.Attributes exposing (class, placeholder, type_)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Extra exposing (nothing)
-import Route exposing (toHref)
+import Model.Credentials exposing (Credentials)
+import Route exposing (replaceUrl, toHref)
 import Session exposing (Session)
 
 
 type alias Model =
     { session : Session
     , problems : List Problem
-    , form : Form
+    , form : Credentials
     }
 
 
 type Problem
     = ClientError String
-
-type alias Form =
-    { email : String
-    , password : String
-    }
+    | ServerError String
 
 
 init : Session -> ( Model, Cmd msg )
 init session =
     ( { session = session
       , problems = []
-      , form = Form "" ""
+      , form = Credentials "" ""
       }
     , Cmd.none
     )
@@ -44,9 +43,10 @@ type Msg
     = SubmittedForm
     | ChangedEmail String
     | ChangedPassword String
+    | CompletedLogin RequestResponse
 
 
-formValidator : Validator String Form
+formValidator : Validator String Credentials
 formValidator =
     all
         [ required .email "Email"
@@ -60,10 +60,24 @@ update msg model =
         SubmittedForm ->
             case validate formValidator model.form of
                 Ok _ ->
-                    ( { model | problems = [] }, Cmd.none )
+                    ( { model | problems = [] }
+                    , loginRequest CompletedLogin model.form
+                    )
 
                 Err problems ->
                     ( { model | problems = List.map ClientError problems }, Cmd.none )
+
+        CompletedLogin (Err error) ->
+            let
+                serverProblems =
+                    decodeErrors error
+            in
+            ( { model | problems = List.map ServerError serverProblems }, Cmd.none )
+
+        CompletedLogin (Ok _) ->
+            ( model
+            , replaceUrl (Session.navKey model.session) Route.Home
+            )
 
         ChangedEmail email ->
             updateForm (\form -> { form | email = email }) model
@@ -72,7 +86,7 @@ update msg model =
             updateForm (\form -> { form | password = password }) model
 
 
-updateForm : (Form -> Form) -> Model -> ( Model, Cmd Msg )
+updateForm : (Credentials -> Credentials) -> Model -> ( Model, Cmd Msg )
 updateForm updater model =
     ( { model | form = updater model.form }, Cmd.none )
 

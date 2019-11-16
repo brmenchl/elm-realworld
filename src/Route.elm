@@ -1,5 +1,6 @@
-module Route exposing (Route(..), fromUrl, toHref)
+module Route exposing (Route(..), fromUrl, replaceUrl, toHref)
 
+import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
 import Url exposing (Url)
@@ -33,6 +34,11 @@ fromUrl url =
 toHref : Route -> Attribute msg
 toHref route =
     Attr.href (toString route)
+
+
+replaceUrl : Nav.Key -> Route -> Cmd msg
+replaceUrl key route =
+    Nav.replaceUrl key (toString route)
 
 
 toString : Route -> String
