@@ -1,115 +1,98 @@
 module Page.Home exposing (Model, Msg, init, toSession, update, view)
 
+import Api exposing (RequestResponse)
+import Api.Article exposing (listArticlesRequest)
+import Asset exposing (src)
+import DateFormat
 import Html exposing (Html, a, button, div, h1, i, img, li, p, span, text, ul)
-import Html.Attributes exposing (class, href, src)
-import Session exposing (Session)
+import Html.Attributes exposing (class, href)
+import Model.Article exposing (Article)
+import Model.Session exposing (Session)
+import Time
 
 
 type alias Model =
     { session : Session
+    , articles : List Article
     }
 
 
 init : Session -> ( Model, Cmd Msg )
 init session =
-    ( Model session, Cmd.none )
+    ( Model session [], listArticlesRequest CompletedLoadArticles )
 
 
-toSession : Model -> Session
-toSession model =
-    model.session
-
-
-type alias Msg =
-    String
+type Msg
+    = CompletedLoadArticles (RequestResponse (List Article))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update _ model =
-    ( model, Cmd.none )
+update msg model =
+    case msg of
+        CompletedLoadArticles (Ok ( _, articles )) ->
+            ( { model | articles = articles }, Cmd.none )
+
+        CompletedLoadArticles (Err _) ->
+            ( model, Cmd.none )
 
 
 view : Model -> { title : String, content : Html msg }
-view _ =
+view model =
     { title = "Home"
-    , content = content
+    , content = content model
     }
 
 
-content : Html msg
-content =
+content : Model -> Html msg
+content model =
     div [ class "home-page" ]
         [ viewBanner
         , div [ class "container page" ]
             [ div [ class "row" ]
-                [ div [ class "col-md-9" ]
-                    [ div [ class "feed-toggle" ]
-                        [ ul [ class "nav nav-pills outline-active" ]
-                            [ li [ class "nav-item" ]
-                                [ a [ class "nav-link disabled", href "" ]
-                                    [ text "Your Feed" ]
-                                ]
-                            , li [ class "nav-item" ]
-                                [ a [ class "nav-link active", href "" ]
-                                    [ text "Global Feed" ]
-                                ]
-                            ]
-                        ]
-                    , div [ class "article-preview" ]
-                        [ div [ class "article-meta" ]
-                            [ a [ href "profile.html" ]
-                                [ img [ src "http://i.imgur.com/Qr71crq.jpg" ]
-                                    []
-                                ]
-                            , div [ class "info" ]
-                                [ a [ href "", class "author" ]
-                                    [ text "Eric Simons" ]
-                                , span [ class "date" ]
-                                    [ text "January 20th" ]
-                                ]
-                            , button [ class "btn btn-outline-primary btn-sm pull-xs-right" ]
-                                [ i [ class "ion-heart" ] []
-                                , text "29"
-                                ]
-                            ]
-                        , a [ href "", class "preview-link" ]
-                            [ h1 []
-                                [ text "How to build webapps that scale" ]
-                            , p []
-                                [ text "This is the description for the post." ]
-                            , span []
-                                [ text "Read more..." ]
-                            ]
-                        ]
-                    , div [ class "article-preview" ]
-                        [ div [ class "article-meta" ]
-                            [ a [ href "profile.html" ]
-                                [ img [ src "http://i.imgur.com/N4VcUeJ.jpg" ]
-                                    []
-                                ]
-                            , div [ class "info" ]
-                                [ a [ href "", class "author" ]
-                                    [ text "Albert Pai" ]
-                                , span [ class "date" ]
-                                    [ text "January 20th" ]
-                                ]
-                            , button [ class "btn btn-outline-primary btn-sm pull-xs-right" ]
-                                [ i [ class "ion-heart" ] []
-                                , text "32"
-                                ]
-                            ]
-                        , a [ href "", class "preview-link" ]
-                            [ h1 []
-                                [ text "The song you won't ever stop singing. No matter how hard you try." ]
-                            , p []
-                                [ text "This is the description for the post." ]
-                            , span []
-                                [ text "Read more..." ]
-                            ]
-                        ]
-                    ]
+                [ div [ class "col-md-9" ] (feedToggle :: List.map articlePreview model.articles)
                 , viewPopularTags
                 ]
+            ]
+        ]
+
+
+feedToggle : Html msg
+feedToggle =
+    div [ class "feed-toggle" ]
+        [ ul [ class "nav nav-pills outline-active" ]
+            [ li [ class "nav-item" ]
+                [ a [ class "nav-link disabled", href "" ]
+                    [ text "Your Feed" ]
+                ]
+            , li [ class "nav-item" ]
+                [ a [ class "nav-link active", href "" ]
+                    [ text "Global Feed" ]
+                ]
+            ]
+        ]
+
+
+articlePreview : Article -> Html msg
+articlePreview article =
+    div [ class "article-preview" ]
+        [ div [ class "article-meta" ]
+            [ a [ href "profile.html" ]
+                [ img [ src article.author.image ] [] ]
+            , div [ class "info" ]
+                [ a [ href "", class "author" ]
+                    [ text article.author.username ]
+                , span [ class "date" ]
+                    [ text (formatCreatedAt article.createdAt) ]
+                ]
+            , button [ class "btn btn-outline-primary btn-sm pull-xs-right" ]
+                [ i [ class "ion-heart" ] []
+                , text (String.fromInt article.favoritesCount)
+                ]
+            ]
+        , a [ href "", class "preview-link" ]
+            [ h1 [] [ text article.title ]
+            , p [] [ text article.description ]
+            , span [] [ text "Read more..." ]
             ]
         ]
 
@@ -138,3 +121,26 @@ viewBanner =
                 [ text "A place to share your knowledge." ]
             ]
         ]
+
+
+
+-- Formatters
+
+
+formatCreatedAt : Time.Posix -> String
+formatCreatedAt =
+    DateFormat.format
+        [ DateFormat.monthNameFull
+        , DateFormat.text " "
+        , DateFormat.dayOfMonthSuffix
+        ]
+        Time.utc
+
+
+
+-- Session
+
+
+toSession : Model -> Session
+toSession model =
+    model.session
