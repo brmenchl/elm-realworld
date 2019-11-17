@@ -1,12 +1,86 @@
-module Api exposing (RequestResponse, decodeErrors)
+module Api exposing (RequestResponse, decodeErrors, get, post)
 
+import Api.Endpoint exposing (Endpoint, toUrl)
 import Http
 import Http.Detailed
 import Json.Decode exposing (Decoder, decodeString, field, keyValuePairs, list, map, string)
+import Model.Credentials exposing (Credentials, toTokenString)
 
 
 type alias RequestResponse body =
     Result (Http.Detailed.Error String) ( Http.Metadata, body )
+
+
+
+-- Header Builders
+
+
+credentialsHeader : Credentials -> Http.Header
+credentialsHeader credentials =
+    Http.header "authorization" ("Token " ++ toTokenString credentials)
+
+
+
+-- Request Builders
+
+
+type alias RequestOptions msg model =
+    { endpoint : Endpoint
+    , credentials : Maybe Credentials
+    , toMsg : RequestResponse model -> msg
+    , decoder : Decoder model
+    }
+
+
+type alias RequestOptionsWithBody msg model =
+    { endpoint : Endpoint
+    , credentials : Maybe Credentials
+    , toMsg : RequestResponse model -> msg
+    , decoder : Decoder model
+    , body : Http.Body
+    }
+
+
+get : RequestOptions msg model -> Cmd msg
+get { endpoint, credentials, toMsg, decoder } =
+    Http.request
+        { url = toUrl endpoint
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , headers =
+            case credentials of
+                Just creds ->
+                    [ credentialsHeader creds ]
+
+                Nothing ->
+                    []
+        , body = Http.emptyBody
+        , expect = Http.Detailed.expectJson toMsg decoder
+        }
+
+
+post : RequestOptionsWithBody msg model -> Cmd msg
+post { endpoint, credentials, toMsg, decoder, body } =
+    Http.request
+        { url = toUrl endpoint
+        , method = "POST"
+        , timeout = Nothing
+        , tracker = Nothing
+        , body = body
+        , headers =
+            case credentials of
+                Just creds ->
+                    [ credentialsHeader creds ]
+
+                Nothing ->
+                    []
+        , expect = Http.Detailed.expectJson toMsg decoder
+        }
+
+
+
+-- Errors
 
 
 decodeErrors : Http.Detailed.Error String -> List String

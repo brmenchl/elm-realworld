@@ -1,10 +1,10 @@
 module Api.Register exposing (RegisterCredentials, registerRequest, toRegisterCredentials)
 
 import Api exposing (RequestResponse)
+import Api.Endpoint as Endpoint
 import Http
-import Http.Detailed
 import Json.Encode exposing (Value, object, string)
-import Model.User exposing (User, decoder)
+import Model.User exposing (User, userDecoder)
 
 
 type RegisterCredentials
@@ -18,10 +18,12 @@ toRegisterCredentials username email password =
 
 registerRequest : (RequestResponse User -> msg) -> RegisterCredentials -> Cmd msg
 registerRequest toMsg credentials =
-    Http.post
-        { url = "https://conduit.productionready.io/api/users"
+    Api.post
+        { endpoint = Endpoint.userList
+        , credentials = Nothing
         , body = Http.jsonBody (credentialsEncoder credentials)
-        , expect = Http.Detailed.expectJson toMsg decoder
+        , toMsg = toMsg
+        , decoder = userDecoder
         }
 
 
