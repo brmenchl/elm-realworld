@@ -7,9 +7,9 @@ import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, te
 import Html.Attributes exposing (class, placeholder, type_, value)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Extra exposing (nothing)
+import Model.Session exposing (Session, navKey, updateUser)
 import Model.User exposing (User)
 import Route exposing (replaceUrl, toHref)
-import Session exposing (Session)
 
 
 type alias Model =
@@ -92,8 +92,8 @@ update msg model =
             ( { model | problems = List.map ServerError serverProblems }, Cmd.none )
 
         CompletedRegister (Ok ( _, user )) ->
-            ( { model | session = Session.updateUser model.session (Just user) }
-            , replaceUrl (Session.navKey model.session) Route.Home
+            ( { model | session = updateUser model.session (Just user) }
+            , replaceUrl (navKey model.session) Route.Home
             )
 
         ChangedUsername username ->

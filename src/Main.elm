@@ -2,13 +2,13 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
+import Model.Session exposing (Session(..), navKey)
 import Page exposing (Page(..))
 import Page.Home as Home
 import Page.Login as Login
 import Page.NotFound as NotFound
 import Page.Register as Register
 import Route exposing (Route)
-import Session exposing (Session)
 import Url exposing (Url)
 
 
@@ -25,7 +25,7 @@ type Model
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url navKey =
-    updateRoute (Route.fromUrl url) (NotFound <| Session.Guest navKey)
+    updateRoute (Route.fromUrl url) (NotFound <| Guest navKey)
 
 
 toSession : Model -> Session
@@ -88,7 +88,7 @@ update msg model =
                             ( model, Cmd.none )
 
                         Just _ ->
-                            ( model, Nav.pushUrl (Session.navKey <| toSession model) (Url.toString url) )
+                            ( model, Nav.pushUrl (navKey <| toSession model) (Url.toString url) )
 
                 Browser.External href ->
                     ( model, Nav.load href )
