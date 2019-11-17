@@ -1,33 +1,44 @@
-module Asset exposing (defaultAvatar, error, loading, src)
+module Asset exposing (Image, defaultAvatar, error, imageDecoder, loading, src)
 
 import Html exposing (Attribute)
 import Html.Attributes as Attr
+import Json.Decode exposing (Decoder, map, string)
 
 
 type Image
-    = Image String
+    = Local String
+    | Remote String
 
 
 error : Image
 error =
-    image "error.jpg"
+    Local "error.jpg"
 
 
 loading : Image
 loading =
-    image "loading.svg"
+    Local "loading.svg"
 
 
 defaultAvatar : Image
 defaultAvatar =
-    image "smiley-cyrus.jpg"
-
-
-image : String -> Image
-image filename =
-    Image ("/assets/images/" ++ filename)
+    Local "smiley-cyrus.jpg"
 
 
 src : Image -> Attribute msg
-src (Image url) =
+src image =
+    let
+        url =
+            case image of
+                Local filename ->
+                    "/assets/images/" ++ filename
+
+                Remote remoteUrl ->
+                    remoteUrl
+    in
     Attr.src url
+
+
+imageDecoder : Decoder Image
+imageDecoder =
+    map Remote string
