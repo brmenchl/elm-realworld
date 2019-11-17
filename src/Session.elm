@@ -1,29 +1,43 @@
-module Session exposing (Session(..), navKey)
+module Session exposing (Session(..), navKey, updateUser)
 
 import Browser.Navigation as Nav
-import Identity exposing (Identity)
+import Model.User exposing (User)
 
 
 type Session
-    = LoggedIn Identity Nav.Key
+    = LoggedIn Nav.Key User
     | Guest Nav.Key
 
 
 navKey : Session -> Nav.Key
 navKey session =
     case session of
-        LoggedIn _ key ->
+        LoggedIn key _ ->
             key
 
         Guest key ->
             key
 
 
--- identity : Session -> Maybe Identity
--- identity session =
---     case session of
---         LoggedIn val _ ->
---             Just val
+user : Session -> Maybe User
+user session =
+    case session of
+        LoggedIn _ val ->
+            Just val
 
---         Guest _ ->
---             Nothing
+        Guest _ ->
+            Nothing
+
+
+updateUser : Session -> Maybe User -> Session
+updateUser session maybeUser =
+    let
+        key =
+            navKey session
+    in
+    case maybeUser of
+        Just val ->
+            LoggedIn key val
+
+        Nothing ->
+            Guest key

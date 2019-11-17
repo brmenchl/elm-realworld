@@ -1,13 +1,13 @@
 module Page.Login exposing (Model, Msg, init, toSession, update, view)
 
-import Api exposing (decodeErrors)
-import Api.Login exposing (RequestResponse, loginRequest)
-import Form exposing (Validator, all, required, validate)
+import Api exposing (RequestResponse, decodeErrors)
+import Api.Login exposing (loginRequest, toLoginCredentials)
+import Form exposing (Validator, all, fromValid, required, validate)
 import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, text, ul)
 import Html.Attributes exposing (class, placeholder, type_)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Extra exposing (nothing)
-import Model.Credentials exposing (Credentials)
+import Model.User exposing (User)
 import Route exposing (replaceUrl, toHref)
 import Session exposing (Session)
 
@@ -15,7 +15,13 @@ import Session exposing (Session)
 type alias Model =
     { session : Session
     , problems : List Problem
-    , form : Credentials
+    , form : Form
+    }
+
+
+type alias Form =
+    { email : String
+    , password : String
     }
 
 
@@ -28,7 +34,7 @@ init : Session -> ( Model, Cmd msg )
 init session =
     ( { session = session
       , problems = []
-      , form = Credentials "" ""
+      , form = Form "" ""
       }
     , Cmd.none
     )
@@ -43,10 +49,10 @@ type Msg
     = SubmittedForm
     | ChangedEmail String
     | ChangedPassword String
-    | CompletedLogin RequestResponse
+    | CompletedLogin (RequestResponse User)
 
 
-formValidator : Validator String Credentials
+formValidator : Validator String Form
 formValidator =
     all
         [ required .email "Email"
@@ -59,9 +65,13 @@ update msg model =
     case msg of
         SubmittedForm ->
             case validate formValidator model.form of
-                Ok _ ->
+                Ok validForm ->
+                    let
+                        form =
+                            fromValid validForm
+                    in
                     ( { model | problems = [] }
-                    , loginRequest CompletedLogin model.form
+                    , loginRequest CompletedLogin (toLoginCredentials form.email form.password)
                     )
 
                 Err problems ->
@@ -74,8 +84,8 @@ update msg model =
             in
             ( { model | problems = List.map ServerError serverProblems }, Cmd.none )
 
-        CompletedLogin (Ok _) ->
-            ( model
+        CompletedLogin (Ok ( _, user )) ->
+            ( { model | session = Session.updateUser model.session (Just user) }
             , replaceUrl (Session.navKey model.session) Route.Home
             )
 
@@ -86,7 +96,7 @@ update msg model =
             updateForm (\form -> { form | password = password }) model
 
 
-updateForm : (Credentials -> Credentials) -> Model -> ( Model, Cmd Msg )
+updateForm : (Form -> Form) -> Model -> ( Model, Cmd Msg )
 updateForm updater model =
     ( { model | form = updater model.form }, Cmd.none )
 

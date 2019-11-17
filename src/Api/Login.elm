@@ -1,19 +1,37 @@
-module Api.Login exposing (RequestResponse, loginRequest)
+module Api.Login exposing (LoginCredentials, loginRequest, toLoginCredentials)
 
+import Api exposing (RequestResponse)
 import Http
 import Http.Detailed
-import Model.Credentials exposing (Credentials, encoder)
+import Json.Encode exposing (Value, object, string)
 import Model.User exposing (User, decoder)
 
 
-type alias RequestResponse =
-    Result (Http.Detailed.Error String) ( Http.Metadata, User )
+type LoginCredentials
+    = LoginCredentials String String
 
 
-loginRequest : (RequestResponse -> msg) -> Credentials -> Cmd msg
+toLoginCredentials : String -> String -> LoginCredentials
+toLoginCredentials email password =
+    LoginCredentials email password
+
+
+loginRequest : (RequestResponse User -> msg) -> LoginCredentials -> Cmd msg
 loginRequest toMsg credentials =
     Http.post
         { url = "https://conduit.productionready.io/api/users/login"
-        , body = Http.jsonBody (encoder credentials)
+        , body = Http.jsonBody (credentialsEncoder credentials)
         , expect = Http.Detailed.expectJson toMsg decoder
         }
+
+
+credentialsEncoder : LoginCredentials -> Value
+credentialsEncoder (LoginCredentials email password) =
+    object
+        [ ( "user"
+          , object
+                [ ( "email", string email )
+                , ( "password", string password )
+                ]
+          )
+        ]

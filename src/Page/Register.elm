@@ -1,11 +1,14 @@
 module Page.Register exposing (Model, Msg, init, toSession, update, view)
 
-import Form exposing (Validator, all, atLeastMinimum, atMostMaximum, firstOf, required, validate)
+import Api exposing (RequestResponse, decodeErrors)
+import Api.Register exposing (registerRequest, toRegisterCredentials)
+import Form exposing (Validator, all, atLeastMinimum, atMostMaximum, firstOf, fromValid, required, validate)
 import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, text, ul)
-import Html.Attributes exposing (class, placeholder, type_)
+import Html.Attributes exposing (class, placeholder, type_, value)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Extra exposing (nothing)
-import Route exposing (toHref)
+import Model.User exposing (User)
+import Route exposing (replaceUrl, toHref)
 import Session exposing (Session)
 
 
@@ -18,6 +21,7 @@ type alias Model =
 
 type Problem
     = ClientError String
+    | ServerError String
 
 
 type alias Form =
@@ -47,6 +51,7 @@ type Msg
     | ChangedUsername String
     | ChangedEmail String
     | ChangedPassword String
+    | CompletedRegister (RequestResponse User)
 
 
 formValidator : Validator String Form
@@ -67,11 +72,29 @@ update msg model =
     case msg of
         SubmittedForm ->
             case validate formValidator model.form of
-                Ok _ ->
-                    ( { model | problems = [] }, Cmd.none )
+                Ok validForm ->
+                    let
+                        form =
+                            fromValid validForm
+                    in
+                    ( { model | problems = [] }
+                    , registerRequest CompletedRegister (toRegisterCredentials form.username form.email form.password)
+                    )
 
                 Err problems ->
                     ( { model | problems = List.map ClientError problems }, Cmd.none )
+
+        CompletedRegister (Err error) ->
+            let
+                serverProblems =
+                    decodeErrors error
+            in
+            ( { model | problems = List.map ServerError serverProblems }, Cmd.none )
+
+        CompletedRegister (Ok ( _, user )) ->
+            ( { model | session = Session.updateUser model.session (Just user) }
+            , replaceUrl (Session.navKey model.session) Route.Home
+            )
 
         ChangedUsername username ->
             updateForm (\form -> { form | username = username }) model
@@ -110,15 +133,15 @@ content model =
                     , viewErrors model.problems
                     , form [ onSubmit SubmittedForm ]
                         [ fieldset [ class "form-group" ]
-                            [ input [ class "form-control form-control-lg", type_ "text", placeholder "Your Name", onInput ChangedUsername ]
+                            [ input [ class "form-control form-control-lg", type_ "text", placeholder "Your Name", onInput ChangedUsername, value model.form.username ]
                                 []
                             ]
                         , fieldset [ class "form-group" ]
-                            [ input [ class "form-control form-control-lg", type_ "text", placeholder "Email", onInput ChangedEmail ]
+                            [ input [ class "form-control form-control-lg", type_ "text", placeholder "Email", onInput ChangedEmail, value model.form.email ]
                                 []
                             ]
                         , fieldset [ class "form-group" ]
-                            [ input [ class "form-control form-control-lg", type_ "password", placeholder "Password", onInput ChangedPassword ]
+                            [ input [ class "form-control form-control-lg", type_ "password", placeholder "Password", onInput ChangedPassword, value model.form.password ]
                                 []
                             ]
                         , button [ class "btn btn-lg btn-primary pull-xs-right" ]
