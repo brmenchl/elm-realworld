@@ -9,7 +9,7 @@ import Page.Login as Login
 import Page.NotFound as NotFound
 import Page.Register as Register
 import Page.Settings as Settings
-import Route exposing (Route)
+import Route exposing (Route, replaceUrl)
 import Url exposing (Url)
 
 
@@ -161,7 +161,9 @@ updateRoute maybeRoute model =
                     subUpdate Settings SettingsMsg (Settings.init { key = session.key, user = user })
 
                 Nothing ->
-                    updateRoute (Just Route.Login) model
+                    ( model
+                    , replaceUrl (.key <| toSession model) Route.Login
+                    )
 
 
 subUpdate : (subModel -> Model) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
