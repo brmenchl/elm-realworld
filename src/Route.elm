@@ -11,6 +11,7 @@ type Route
     = Home
     | Login
     | Register
+    | Settings
 
 
 parser : Parser (Route -> a) a
@@ -19,6 +20,7 @@ parser =
         [ Parser.map Home top
         , Parser.map Login <| s "login"
         , Parser.map Register <| s "register"
+        , Parser.map Settings <| s "settings"
         ]
 
 
@@ -33,27 +35,31 @@ fromUrl url =
 
 toHref : Route -> Attribute msg
 toHref route =
-    Attr.href (toString route)
+    Attr.href (path route)
 
 
 replaceUrl : Nav.Key -> Route -> Cmd msg
 replaceUrl key route =
-    Nav.replaceUrl key (toString route)
+    Nav.replaceUrl key (path route)
 
 
-toString : Route -> String
-toString route =
-    "#/" ++ String.join "/" (toPathParams route)
+path : Route -> String
+path route =
+    let
+        toString : List String -> String
+        toString pathParams =
+            "#/" ++ String.join "/" pathParams
+    in
+    toString <|
+        case route of
+            Home ->
+                []
 
+            Login ->
+                [ "login" ]
 
-toPathParams : Route -> List String
-toPathParams route =
-    case route of
-        Home ->
-            []
+            Register ->
+                [ "register" ]
 
-        Login ->
-            [ "login" ]
-
-        Register ->
-            [ "register" ]
+            Settings ->
+                [ "settings" ]
