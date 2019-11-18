@@ -1,4 +1,4 @@
-module Asset exposing (Image, defaultAvatar, error, imageDecoder, loading, src)
+module Asset exposing (Image, defaultAvatar, error, imageDecoder, imageUrl, loading, src)
 
 import Html exposing (Attribute)
 import Html.Attributes as Attr
@@ -25,18 +25,19 @@ defaultAvatar =
     Local "smiley-cyrus.jpg"
 
 
+imageUrl : Image -> String
+imageUrl image =
+    case image of
+        Local filename ->
+            "/assets/images/" ++ filename
+
+        Remote remoteUrl ->
+            remoteUrl
+
+
 src : Image -> Attribute msg
 src image =
-    let
-        url =
-            case image of
-                Local filename ->
-                    "/assets/images/" ++ filename
-
-                Remote remoteUrl ->
-                    remoteUrl
-    in
-    Attr.src url
+    Attr.src (imageUrl image)
 
 
 imageDecoder : Decoder Image
