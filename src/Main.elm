@@ -50,18 +50,25 @@ toSession model =
 
 view : Model -> Document Msg
 view model =
+    let
+        viewSimplePage =
+            Page.simpleView (toSession model)
+
+        viewPage =
+            Page.view (toSession model)
+    in
     case model of
         NotFound _ ->
-            Page.simpleView Page.Other NotFound.view
+            viewSimplePage Page.Other NotFound.view
 
         Home home ->
-            Page.view Page.Home HomeMsg (Home.view home)
+            viewPage Page.Home HomeMsg (Home.view home)
 
         Login login ->
-            Page.view Page.Login LoginMsg (Login.view login)
+            viewPage Page.Login LoginMsg (Login.view login)
 
         Register register ->
-            Page.view Page.Register RegisterMsg (Register.view register)
+            viewPage Page.Register RegisterMsg (Register.view register)
 
 
 

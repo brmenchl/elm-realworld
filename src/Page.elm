@@ -1,9 +1,9 @@
 module Page exposing (Page(..), simpleView, view)
 
 import Browser exposing (Document)
-import Html exposing (Html, a, div, li, nav, text, ul)
-import Html.Attributes exposing (class, classList)
-import Layout.Footer exposing (viewFooter)
+import Html exposing (Html, a, div, li, nav, text, ul, footer, span)
+import Html.Attributes exposing (class, classList, href)
+import Model.Session as Session exposing (Session(..))
 import Route exposing (Route(..))
 import View.Icon exposing (icon)
 
@@ -15,34 +15,38 @@ type Page
     | Register
 
 
-simpleView : Page -> { title : String, content : Html msg } -> Document msg
-simpleView currentPage { title, content } =
+simpleView : Session -> Page -> { title : String, content : Html msg } -> Document msg
+simpleView session currentPage { title, content } =
     { title = title ++ " — Conduit"
-    , body = viewLayout content currentPage
+    , body = viewLayout content session currentPage
     }
 
 
-view : Page -> (subMsg -> msg) -> { title : String, content : Html subMsg } -> Document msg
-view currentPage toMsg config =
+view : Session -> Page -> (subMsg -> msg) -> { title : String, content : Html subMsg } -> Document msg
+view session currentPage toMsg config =
     let
         basePage =
-            simpleView currentPage config
+            simpleView session currentPage config
     in
     { title = basePage.title
     , body = List.map (Html.map toMsg) basePage.body
     }
 
 
-viewLayout : Html msg -> Page -> List (Html msg)
-viewLayout content currentPage =
-    [ viewHeader currentPage
+viewLayout : Html msg -> Session -> Page -> List (Html msg)
+viewLayout content session currentPage =
+    [ viewHeader session currentPage
     , content
     , viewFooter
     ]
 
 
-viewHeader : Page -> Html msg
-viewHeader currentPage =
+
+-- Header
+
+
+viewHeader : Session -> Page -> Html msg
+viewHeader session currentPage =
     let
         linkTo =
             navLink currentPage
@@ -52,17 +56,20 @@ viewHeader currentPage =
             [ a [ class "navbar-brand", Route.toHref Route.Home ]
                 [ text "conduit" ]
             , ul [ class "nav navbar-nav pull-xs-right" ]
-                [ linkTo Route.Home [ text "Home" ]
-                , linkTo Route.Login
-                    [ icon "ion-compose"
-                    , text "New Post"
-                    ]
-                , linkTo Route.Login
-                    [ icon "ion-gear-a"
-                    , text "Settings"
-                    ]
-                , linkTo Route.Login [ text "Sign up" ]
-                ]
+                (case session of
+                    Session.LoggedIn _ user ->
+                        [ linkTo Route.Home [ text "Home" ]
+                        , linkTo Route.Home [ icon "ion-compose", text "New Article" ]
+                        , linkTo Route.Home [ icon "ion-gear-a", text "Settings" ]
+                        , linkTo Route.Home [ text user.username ]
+                        ]
+
+                    Session.Guest _ ->
+                        [ linkTo Route.Home [ text "Home" ]
+                        , linkTo Route.Login [ text "Sign in" ]
+                        , linkTo Route.Register [ text "Sign up" ]
+                        ]
+                )
             ]
         ]
 
@@ -84,3 +91,25 @@ isActive page route =
 
         _ ->
             False
+
+
+
+-- Footer
+
+
+viewFooter : Html msg
+viewFooter =
+    footer []
+        [ div [ class "container" ]
+            [ a [ href "/", class "logo-font" ]
+                [ text "conduit" ]
+            , span [ class "attribution" ]
+                [ text "An interactive learning project from"
+                , a [ href "https://thinkster.io" ]
+                    [ text "Thinkster" ]
+                , text ". Code"
+                , text "&"
+                , text "design licensed under MIT."
+                ]
+            ]
+        ]

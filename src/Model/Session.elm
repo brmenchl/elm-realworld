@@ -1,4 +1,4 @@
-module Model.Session exposing (Session(..), navKey, updateUser)
+module Model.Session exposing (Session(..), navKey, updateUser, user)
 
 import Browser.Navigation as Nav
 import Model.User exposing (User)
