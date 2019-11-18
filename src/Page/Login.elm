@@ -1,4 +1,4 @@
-module Page.Login exposing (Model, Msg, init, toSession, update, view)
+module Page.Login exposing (Model, Msg, init, update, view, toSession)
 
 import Api exposing (RequestResponse, decodeErrors)
 import Api.Login exposing (loginRequest, toLoginCredentials)
@@ -7,21 +7,15 @@ import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, te
 import Html.Attributes exposing (class, placeholder, type_)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Extra exposing (nothing)
-import Model.Session exposing (Session, navKey, updateUser)
+import Model.Session exposing (UnknownSession)
 import Model.User exposing (User)
 import Route exposing (replaceUrl, toHref)
 
 
 type alias Model =
-    { session : Session
+    { session : UnknownSession
     , problems : List Problem
     , form : Form
-    }
-
-
-type alias Form =
-    { email : String
-    , password : String
     }
 
 
@@ -30,26 +24,15 @@ type Problem
     | ServerError String
 
 
-init : Session -> ( Model, Cmd msg )
-init session =
-    ( { session = session
-      , problems = []
-      , form = Form "" ""
-      }
-    , Cmd.none
-    )
+type alias Form =
+    { email : String
+    , password : String
+    }
 
 
-toSession : Model -> Session
-toSession model =
-    model.session
-
-
-type Msg
-    = SubmittedForm
-    | ChangedEmail String
-    | ChangedPassword String
-    | CompletedLogin (RequestResponse User)
+emptyForm : Form
+emptyForm =
+    Form "" ""
 
 
 formValidator : Validator String Form
@@ -58,6 +41,23 @@ formValidator =
         [ required .email "Email"
         , required .password "Password"
         ]
+
+
+init : UnknownSession -> ( Model, Cmd msg )
+init session =
+    ( { session = session
+      , problems = []
+      , form = emptyForm
+      }
+    , Cmd.none
+    )
+
+
+type Msg
+    = SubmittedForm
+    | ChangedEmail String
+    | ChangedPassword String
+    | CompletedLogin (RequestResponse User)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -86,7 +86,7 @@ update msg model =
 
         CompletedLogin (Ok ( _, user )) ->
             ( { model | session = updateUser model.session (Just user) }
-            , replaceUrl (navKey model.session) Route.Home
+            , replaceUrl model.session.key Route.Home
             )
 
         ChangedEmail email ->
@@ -94,6 +94,11 @@ update msg model =
 
         ChangedPassword password ->
             updateForm (\form -> { form | password = password }) model
+
+
+updateUser : UnknownSession -> Maybe User -> UnknownSession
+updateUser session user =
+    { session | user = user }
 
 
 updateForm : (Form -> Form) -> Model -> ( Model, Cmd Msg )
@@ -157,3 +162,12 @@ viewError problem =
 
         ServerError msg ->
             li [] [ text msg ]
+
+
+
+-- Session
+
+
+toSession : Model -> UnknownSession
+toSession model =
+    model.session

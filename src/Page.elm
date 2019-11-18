@@ -1,9 +1,9 @@
 module Page exposing (Page(..), simpleView, view)
 
 import Browser exposing (Document)
-import Html exposing (Html, a, div, li, nav, text, ul, footer, span)
+import Html exposing (Html, a, div, footer, li, nav, span, text, ul)
 import Html.Attributes exposing (class, classList, href)
-import Model.Session as Session exposing (Session(..))
+import Model.User exposing (User)
 import Route exposing (Route(..))
 import View.Icon exposing (icon)
 
@@ -13,29 +13,30 @@ type Page
     | Home
     | Login
     | Register
+    | Settings
 
 
-simpleView : Session -> Page -> { title : String, content : Html msg } -> Document msg
-simpleView session currentPage { title, content } =
+simpleView : Maybe User -> Page -> { title : String, content : Html msg } -> Document msg
+simpleView user currentPage { title, content } =
     { title = title ++ " — Conduit"
-    , body = viewLayout content session currentPage
+    , body = viewLayout content user currentPage
     }
 
 
-view : Session -> Page -> (subMsg -> msg) -> { title : String, content : Html subMsg } -> Document msg
-view session currentPage toMsg config =
+view : Maybe User -> Page -> (subMsg -> msg) -> { title : String, content : Html subMsg } -> Document msg
+view user currentPage toMsg config =
     let
         basePage =
-            simpleView session currentPage config
+            simpleView user currentPage config
     in
     { title = basePage.title
     , body = List.map (Html.map toMsg) basePage.body
     }
 
 
-viewLayout : Html msg -> Session -> Page -> List (Html msg)
-viewLayout content session currentPage =
-    [ viewHeader session currentPage
+viewLayout : Html msg -> Maybe User -> Page -> List (Html msg)
+viewLayout content user currentPage =
+    [ viewHeader user currentPage
     , content
     , viewFooter
     ]
@@ -45,8 +46,8 @@ viewLayout content session currentPage =
 -- Header
 
 
-viewHeader : Session -> Page -> Html msg
-viewHeader session currentPage =
+viewHeader : Maybe User -> Page -> Html msg
+viewHeader maybeUser currentPage =
     let
         linkTo =
             navLink currentPage
@@ -56,15 +57,15 @@ viewHeader session currentPage =
             [ a [ class "navbar-brand", Route.toHref Route.Home ]
                 [ text "conduit" ]
             , ul [ class "nav navbar-nav pull-xs-right" ]
-                (case session of
-                    Session.LoggedIn _ user ->
+                (case maybeUser of
+                    Just user ->
                         [ linkTo Route.Home [ text "Home" ]
                         , linkTo Route.Home [ icon "ion-compose", text "New Article" ]
-                        , linkTo Route.Home [ icon "ion-gear-a", text "Settings" ]
+                        , linkTo Route.Settings [ icon "ion-gear-a", text "Settings" ]
                         , linkTo Route.Home [ text user.username ]
                         ]
 
-                    Session.Guest _ ->
+                    Nothing ->
                         [ linkTo Route.Home [ text "Home" ]
                         , linkTo Route.Login [ text "Sign in" ]
                         , linkTo Route.Register [ text "Sign up" ]
@@ -87,6 +88,12 @@ isActive page route =
             True
 
         ( Login, Route.Login ) ->
+            True
+
+        ( Register, Route.Register ) ->
+            True
+
+        ( Settings, Route.Settings ) ->
             True
 
         _ ->

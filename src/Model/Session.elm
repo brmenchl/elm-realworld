@@ -1,43 +1,15 @@
-module Model.Session exposing (Session(..), navKey, updateUser, user)
+module Model.Session exposing (AuthenticatedSession, UnknownSession)
 
 import Browser.Navigation as Nav
 import Model.User exposing (User)
 
 
-type Session
-    = LoggedIn Nav.Key User
-    | Guest Nav.Key
+type alias AuthenticatedSession =
+    { key : Nav.Key
+    , user : User
+    }
 
-
-navKey : Session -> Nav.Key
-navKey session =
-    case session of
-        LoggedIn key _ ->
-            key
-
-        Guest key ->
-            key
-
-
-user : Session -> Maybe User
-user session =
-    case session of
-        LoggedIn _ val ->
-            Just val
-
-        Guest _ ->
-            Nothing
-
-
-updateUser : Session -> Maybe User -> Session
-updateUser session maybeUser =
-    let
-        key =
-            navKey session
-    in
-    case maybeUser of
-        Just val ->
-            LoggedIn key val
-
-        Nothing ->
-            Guest key
+type alias UnknownSession =
+    { key : Nav.Key
+    , user : Maybe User
+    }

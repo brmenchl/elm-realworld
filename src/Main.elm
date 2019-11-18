@@ -2,12 +2,13 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
-import Model.Session exposing (Session(..), navKey)
+import Model.Session exposing (UnknownSession)
 import Page exposing (Page(..))
 import Page.Home as Home
 import Page.Login as Login
 import Page.NotFound as NotFound
 import Page.Register as Register
+import Page.Settings as Settings
 import Route exposing (Route)
 import Url exposing (Url)
 
@@ -17,18 +18,20 @@ import Url exposing (Url)
 
 
 type Model
-    = NotFound Session
+    = NotFound UnknownSession
     | Home Home.Model
     | Login Login.Model
     | Register Register.Model
+    | Settings Settings.Model
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url navKey =
-    updateRoute (Route.fromUrl url) (NotFound <| Guest navKey)
+init _ url key =
+    updateRoute (Route.fromUrl url)
+        (NotFound { key = key, user = Nothing })
 
 
-toSession : Model -> Session
+toSession : Model -> UnknownSession
 toSession model =
     case model of
         NotFound session ->
@@ -43,6 +46,9 @@ toSession model =
         Register register ->
             Register.toSession register
 
+        Settings settings ->
+            Settings.toSession settings
+
 
 
 -- VIEW
@@ -51,11 +57,14 @@ toSession model =
 view : Model -> Document Msg
 view model =
     let
+        session =
+            toSession model
+
         viewSimplePage =
-            Page.simpleView (toSession model)
+            Page.simpleView session.user
 
         viewPage =
-            Page.view (toSession model)
+            Page.view session.user
     in
     case model of
         NotFound _ ->
@@ -70,6 +79,9 @@ view model =
         Register register ->
             viewPage Page.Register RegisterMsg (Register.view register)
 
+        Settings settings ->
+            viewPage Page.Settings SettingsMsg (Settings.view settings)
+
 
 
 -- UPDATE
@@ -81,6 +93,7 @@ type Msg
     | LoginMsg Login.Msg
     | HomeMsg Home.Msg
     | RegisterMsg Register.Msg
+    | SettingsMsg Settings.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,7 +108,7 @@ update msg model =
                             ( model, Cmd.none )
 
                         Just _ ->
-                            ( model, Nav.pushUrl (navKey <| toSession model) (Url.toString url) )
+                            ( model, Nav.pushUrl (.key <| toSession model) (Url.toString url) )
 
                 Browser.External href ->
                     ( model, Nav.load href )
@@ -114,6 +127,10 @@ update msg model =
         ( RegisterMsg submsg, Register register ) ->
             subUpdate Register RegisterMsg <|
                 Register.update submsg register
+
+        ( SettingsMsg submsg, Settings settings ) ->
+            subUpdate Settings SettingsMsg <|
+                Settings.update submsg settings
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -137,6 +154,14 @@ updateRoute maybeRoute model =
 
         Just Route.Register ->
             subUpdate Register RegisterMsg (Register.init session)
+
+        Just Route.Settings ->
+            case session.user of
+                Just user ->
+                    subUpdate Settings SettingsMsg (Settings.init { key = session.key, user = user })
+
+                Nothing ->
+                    updateRoute (Just Route.Login) model
 
 
 subUpdate : (subModel -> Model) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )

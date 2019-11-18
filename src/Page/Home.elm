@@ -7,19 +7,23 @@ import DateFormat
 import Html exposing (Html, a, button, div, h1, i, img, li, p, span, text, ul)
 import Html.Attributes exposing (class, href)
 import Model.Article exposing (Article)
-import Model.Session exposing (Session)
+import Model.Session exposing (UnknownSession)
 import Time
 
 
 type alias Model =
-    { session : Session
+    { session : UnknownSession
     , articles : List Article
     }
 
 
-init : Session -> ( Model, Cmd Msg )
+init : UnknownSession -> ( Model, Cmd Msg )
 init session =
-    ( Model session [], listArticlesRequest CompletedLoadArticles )
+    ( { session = session
+      , articles = []
+      }
+    , listArticlesRequest CompletedLoadArticles
+    )
 
 
 type Msg
@@ -141,6 +145,6 @@ formatCreatedAt =
 -- Session
 
 
-toSession : Model -> Session
+toSession : Model -> UnknownSession
 toSession model =
     model.session

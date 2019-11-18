@@ -7,13 +7,13 @@ import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, te
 import Html.Attributes exposing (class, placeholder, type_, value)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Extra exposing (nothing)
-import Model.Session exposing (Session, navKey, updateUser)
+import Model.Session exposing (UnknownSession)
 import Model.User exposing (User)
 import Route exposing (replaceUrl, toHref)
 
 
 type alias Model =
-    { session : Session
+    { session : UnknownSession
     , problems : List Problem
     , form : Form
     }
@@ -31,19 +31,19 @@ type alias Form =
     }
 
 
-init : Session -> ( Model, Cmd msg )
+emptyForm : Form
+emptyForm =
+    Form "" "" ""
+
+
+init : UnknownSession -> ( Model, Cmd msg )
 init session =
     ( { session = session
       , problems = []
-      , form = Form "" "" ""
+      , form = emptyForm
       }
     , Cmd.none
     )
-
-
-toSession : Model -> Session
-toSession model =
-    model.session
 
 
 type Msg
@@ -93,7 +93,7 @@ update msg model =
 
         CompletedRegister (Ok ( _, user )) ->
             ( { model | session = updateUser model.session (Just user) }
-            , replaceUrl (navKey model.session) Route.Home
+            , replaceUrl model.session.key Route.Home
             )
 
         ChangedUsername username ->
@@ -104,6 +104,11 @@ update msg model =
 
         ChangedPassword password ->
             updateForm (\form -> { form | password = password }) model
+
+
+updateUser : UnknownSession -> Maybe User -> UnknownSession
+updateUser session user =
+    { session | user = user }
 
 
 updateForm : (Form -> Form) -> Model -> ( Model, Cmd Msg )
@@ -171,3 +176,12 @@ viewError problem =
 
         ServerError msg ->
             li [] [ text msg ]
+
+
+
+-- Session
+
+
+toSession : Model -> UnknownSession
+toSession model =
+    model.session
