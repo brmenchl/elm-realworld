@@ -1,10 +1,11 @@
 module Page.Home exposing (Model, Msg, init, toSession, update, view)
 
 import Api exposing (RequestResponse)
-import Api.Article exposing (listArticlesRequest)
+import Api.Article exposing (feedArticlesRequest, listArticlesRequest)
 import Api.Tag exposing (listTagsRequest)
 import Html exposing (Html, a, div, h1, li, p, text, ul)
-import Html.Attributes exposing (class, href)
+import Html.Attributes exposing (class, classList, href)
+import Html.Events exposing (onClick)
 import Html.Extra as Html
 import Model.Article exposing (Article)
 import Model.Session exposing (UnknownSession)
@@ -14,10 +15,16 @@ import RemoteData exposing (RemoteData(..))
 import View.Article exposing (viewArticlePreviewList)
 
 
+type FeedType
+    = Personal
+    | Global
+
+
 type alias Model =
     { session : UnknownSession
     , articles : RequestResponse (List Article)
     , tags : RequestResponse (List Tag)
+    , feedType : FeedType
     }
 
 
@@ -26,6 +33,7 @@ init session =
     ( { session = session
       , articles = Loading
       , tags = Loading
+      , feedType = Global
       }
     , Cmd.batch
         [ listArticlesRequest CompletedLoadArticles
@@ -37,6 +45,7 @@ init session =
 type Msg
     = CompletedLoadArticles (RequestResponse (List Article))
     | CompletedLoadTags (RequestResponse (List Tag))
+    | ChangeFeedType FeedType
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -47,6 +56,19 @@ update msg model =
 
         CompletedLoadTags tags ->
             ( { model | tags = tags }, Cmd.none )
+
+        ChangeFeedType feedType ->
+            case feedType of
+                Personal ->
+                    case model.session.user of
+                        Just u ->
+                            ( { model | articles = Loading, feedType = feedType }, feedArticlesRequest CompletedLoadArticles u.credentials )
+
+                        Nothing ->
+                            ( model, Cmd.none )
+
+                Global ->
+                    ( { model | articles = Loading, feedType = feedType }, listArticlesRequest CompletedLoadArticles )
 
 
 
@@ -66,35 +88,32 @@ content model =
         [ viewBanner
         , div [ class "container page" ]
             [ div [ class "row" ]
-                [ div [ class "col-md-9" ] (feedToggle model.session.user :: viewArticlePreviewList model.articles)
+                [ div [ class "col-md-9" ] (feedToggle model.session.user model.feedType :: viewArticlePreviewList model.articles)
                 , viewPopularTags model.tags
                 ]
             ]
         ]
 
 
-feedToggle : Maybe User -> Html Msg
-feedToggle user =
+feedToggle : Maybe User -> FeedType -> Html Msg
+feedToggle user currentFeedType =
     let
+        feedToggleItem ( title, feedType ) =
+            li [ class "nav-item" ]
+                [ a [ classList [ ( "nav-link", True ), ( "active", currentFeedType == feedType ) ], href "", onClick (ChangeFeedType feedType) ] [ text title ]
+                ]
+
         userFeedToggle =
             case user of
                 Just _ ->
-                    li [ class "nav-item" ]
-                        [ a [ class "nav-link", href "" ]
-                            [ text "Your Feed" ]
-                        ]
+                    [ ( "Your Feed", Personal ) ]
 
                 Nothing ->
-                    Html.nothing
+                    []
     in
     div [ class "feed-toggle" ]
-        [ ul [ class "nav nav-pills outline-active" ]
-            [ userFeedToggle
-            , li [ class "nav-item" ]
-                [ a [ class "nav-link active", href "" ]
-                    [ text "Global Feed" ]
-                ]
-            ]
+        [ ul [ class "nav nav-pills outline-active" ] <|
+            List.map feedToggleItem (List.append userFeedToggle [ ( "Global Feed", Global ) ])
         ]
 
 

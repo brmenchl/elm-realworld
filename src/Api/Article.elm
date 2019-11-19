@@ -1,8 +1,9 @@
-module Api.Article exposing (listArticlesRequest)
+module Api.Article exposing (feedArticlesRequest, listArticlesRequest)
 
 import Api exposing (RequestResponse)
 import Api.Endpoint as Endpoint
 import Model.Article as Article exposing (Article, listDecoder)
+import Model.Credentials exposing (Credentials)
 import Url.Builder exposing (QueryParameter)
 
 
@@ -11,6 +12,16 @@ listArticlesRequest toMsg =
     Api.get
         { endpoint = Endpoint.articles (paginatedListQueryParams { page = 1, limit = 10 })
         , credentials = Nothing
+        , toMsg = toMsg
+        , decoder = Article.listDecoder
+        }
+
+
+feedArticlesRequest : (RequestResponse (List Article) -> msg) -> Credentials -> Cmd msg
+feedArticlesRequest toMsg credentials =
+    Api.get
+        { endpoint = Endpoint.feed (paginatedListQueryParams { page = 1, limit = 10 })
+        , credentials = Just credentials
         , toMsg = toMsg
         , decoder = Article.listDecoder
         }
