@@ -1,7 +1,8 @@
 module Page exposing (Page(..), simpleView, view)
 
+import Asset exposing (src)
 import Browser exposing (Document)
-import Html exposing (Html, a, div, footer, li, nav, span, text, ul)
+import Html exposing (Html, a, div, footer, img, li, nav, span, text, ul)
 import Html.Attributes exposing (class, classList, href)
 import Model.User exposing (User)
 import Route exposing (Route(..))
@@ -60,9 +61,9 @@ viewHeader maybeUser currentPage =
                 (case maybeUser of
                     Just user ->
                         [ linkTo Route.Home [ text "Home" ]
-                        , linkTo Route.Home [ icon "ion-compose", text "New Article" ]
-                        , linkTo Route.Settings [ icon "ion-gear-a", text "Settings" ]
-                        , linkTo Route.Home [ text user.username ]
+                        , linkTo Route.Home [ icon "ion-compose", text "\u{00A0}New Article" ]
+                        , linkTo Route.Settings [ icon "ion-gear-a", text "\u{00A0}Settings" ]
+                        , linkTo Route.Home [ img [ class "user-pic", src user.image ] [], text user.username ]
                         ]
 
                     Nothing ->
