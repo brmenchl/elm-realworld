@@ -1,4 +1,4 @@
-module Image exposing (Image, defaultAvatar, error, decoder, imageUrl, loading, src)
+module Image exposing (Image, decoder, defaultAvatar, error, imageUrl, loading, remoteImageUrl, src)
 
 import Html exposing (Attribute)
 import Html.Attributes as Attr
@@ -28,11 +28,21 @@ defaultAvatar =
 imageUrl : Image -> String
 imageUrl image =
     case image of
-        Local _ ->
-            ""
+        Local localUrl ->
+            "/assets/images/" ++ localUrl
 
         Remote remoteUrl ->
             remoteUrl
+
+
+remoteImageUrl : Image -> String
+remoteImageUrl image =
+    case image of
+        Remote _ ->
+            imageUrl image
+
+        Local _ ->
+            ""
 
 
 src : Image -> Attribute msg

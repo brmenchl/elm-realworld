@@ -1,5 +1,6 @@
-module Api.Endpoint exposing (Endpoint, articles, login, tags, toUrl, users)
+module Api.Endpoint exposing (Endpoint, articles, login, profile, tags, toUrl, users)
 
+import Model.Username as Username exposing (Username)
 import Url.Builder exposing (QueryParameter)
 
 
@@ -29,6 +30,11 @@ login =
 users : Endpoint
 users =
     fromUrlPieces [ "users" ] []
+
+
+profile : Username -> Endpoint
+profile username =
+    fromUrlPieces [ "profiles", Username.toString username ] []
 
 
 articles : List QueryParameter -> Endpoint
