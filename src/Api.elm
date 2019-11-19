@@ -1,4 +1,4 @@
-module Api exposing (RequestResponse, decodeErrors, get, post)
+module Api exposing (RequestResponse, decodeErrors, get, post, put)
 
 import Api.Endpoint exposing (Endpoint, toUrl)
 import Http
@@ -66,6 +66,25 @@ post { endpoint, credentials, toMsg, decoder, body } =
     Http.request
         { url = toUrl endpoint
         , method = "POST"
+        , timeout = Nothing
+        , tracker = Nothing
+        , body = body
+        , headers =
+            case credentials of
+                Just creds ->
+                    [ credentialsHeader creds ]
+
+                Nothing ->
+                    []
+        , expect = Http.Detailed.expectJson (RemoteData.fromResult >> toMsg) decoder
+        }
+
+
+put : RequestOptionsWithBody msg model -> Cmd msg
+put { endpoint, credentials, toMsg, decoder, body } =
+    Http.request
+        { url = toUrl endpoint
+        , method = "PUT"
         , timeout = Nothing
         , tracker = Nothing
         , body = body

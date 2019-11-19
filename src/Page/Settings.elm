@@ -1,13 +1,17 @@
 module Page.Settings exposing (Model, Msg, init, toSession, update, view)
 
+import Api exposing (RequestResponse, decodeErrors)
+import Api.Register exposing (updateUserRequest)
+import Form exposing (Validator, all, atLeastMinimum, atMostMaximum, firstOf, fromValid, required, validate)
 import Html exposing (Html, button, div, fieldset, form, h1, hr, input, text, textarea)
 import Html.Attributes exposing (class, placeholder, rows, type_, value)
-import Html.Events exposing (onClick, onInput)
-import Image exposing (Image, remoteImageUrl)
+import Html.Events exposing (onClick, onInput, onSubmit)
+import Image exposing (remoteImageUrl)
 import Model.Session exposing (UnknownSession)
 import Model.User exposing (User)
 import Model.Username as Username
-import Route
+import RemoteData exposing (RemoteData(..))
+import Route exposing (replaceUrl)
 
 
 type alias Model =
@@ -19,6 +23,7 @@ type alias Model =
 
 type Problem
     = ClientError String
+    | ServerError String
 
 
 type alias Form =
@@ -50,6 +55,17 @@ formFromUser maybeUser =
             }
 
 
+formValidator : Validator String Form
+formValidator =
+    all
+        [ firstOf
+            [ required .username "Username"
+            , atLeastMinimum .username "Username" 2
+            , atMostMaximum .username "Username" 20
+            ]
+        ]
+
+
 init : UnknownSession -> ( Model, Cmd Msg )
 init session =
     ( { session = session
@@ -66,12 +82,46 @@ type Msg
     | ChangedBio String
     | ChangedEmail String
     | ChangedPassword String
+    | SubmittedForm
+    | CompletedUpdateUser (RequestResponse User)
     | LogoutClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        SubmittedForm ->
+            case validate formValidator model.form of
+                Ok validForm ->
+                    let
+                        form =
+                            fromValid validForm
+                    in
+                    case model.session.user of
+                        Just user ->
+                            ( { model | problems = [] }, updateUserRequest CompletedUpdateUser user.credentials form )
+
+                        Nothing ->
+                            ( model, Cmd.none )
+
+                Err problems ->
+                    ( { model | problems = List.map ClientError problems }, Cmd.none )
+
+        CompletedUpdateUser (Success ( _, user )) ->
+            ( { model | session = updateUser model.session (Just user) }
+            , replaceUrl model.session.key (Route.Profile user.username)
+            )
+
+        CompletedUpdateUser (Failure error) ->
+            let
+                serverProblems =
+                    decodeErrors error
+            in
+            ( { model | problems = List.map ServerError serverProblems }, Cmd.none )
+
+        CompletedUpdateUser _ ->
+            ( model, Cmd.none )
+
         ChangedImageUrl imageUrl ->
             updateForm (\form -> { form | imageUrl = imageUrl }) model
 
@@ -89,6 +139,11 @@ update msg model =
 
         LogoutClicked ->
             ( { model | session = clearUser model.session }, Route.replaceUrl model.session.key Route.Home )
+
+
+updateUser : UnknownSession -> Maybe User -> UnknownSession
+updateUser session user =
+    { session | user = user }
 
 
 clearUser : UnknownSession -> UnknownSession
@@ -119,7 +174,7 @@ content model =
             [ div [ class "row" ]
                 [ div [ class "col-md-6 offset-md-3 col-xs-12" ]
                     [ h1 [ class "text-xs-center" ] [ text "Your Settings" ]
-                    , form []
+                    , form [ onSubmit SubmittedForm ]
                         [ fieldset []
                             [ fieldset [ class "form-group" ]
                                 [ input [ class "form-control", type_ "text", placeholder "URL of profile picture", value model.form.imageUrl, onInput ChangedImageUrl ] []
