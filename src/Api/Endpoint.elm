@@ -1,4 +1,4 @@
-module Api.Endpoint exposing (Endpoint, articles, login, toUrl, userList)
+module Api.Endpoint exposing (Endpoint, articles, login, tags, toUrl, userList)
 
 import Url.Builder exposing (QueryParameter)
 
@@ -34,3 +34,8 @@ userList =
 articles : List QueryParameter -> Endpoint
 articles params =
     fromUrlPieces [ "articles" ] params
+
+
+tags : Endpoint
+tags =
+    fromUrlPieces [ "tags" ] []
