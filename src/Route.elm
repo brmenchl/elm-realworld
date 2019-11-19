@@ -3,6 +3,7 @@ module Route exposing (Route(..), fromUrl, replaceUrl, toHref)
 import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
+import Model.Username as Username exposing (Username)
 import Url exposing (Url)
 import Url.Parser as Parser exposing (Parser, oneOf, s, top)
 
@@ -12,6 +13,7 @@ type Route
     | Login
     | Register
     | Settings
+    | Profile Username
 
 
 parser : Parser (Route -> a) a
@@ -21,6 +23,7 @@ parser =
         , Parser.map Login <| s "login"
         , Parser.map Register <| s "register"
         , Parser.map Settings <| s "settings"
+        , Parser.map Profile <| Username.urlParser
         ]
 
 
@@ -31,16 +34,6 @@ fromUrl url =
             | path = Maybe.withDefault "" url.fragment
             , fragment = Nothing
         }
-
-
-toHref : Route -> Attribute msg
-toHref route =
-    Attr.href (path route)
-
-
-replaceUrl : Nav.Key -> Route -> Cmd msg
-replaceUrl key route =
-    Nav.replaceUrl key (path route)
 
 
 path : Route -> String
@@ -63,3 +56,16 @@ path route =
 
             Settings ->
                 [ "settings" ]
+
+            Profile username ->
+                [ Username.toHandle username ]
+
+
+toHref : Route -> Attribute msg
+toHref route =
+    Attr.href (path route)
+
+
+replaceUrl : Nav.Key -> Route -> Cmd msg
+replaceUrl key route =
+    Nav.replaceUrl key (path route)

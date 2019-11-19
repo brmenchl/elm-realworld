@@ -1,6 +1,5 @@
 module Page exposing (Page(..), simpleView, view)
 
-import Asset exposing (src)
 import Browser exposing (Document)
 import Html exposing (Html, a, div, footer, img, li, nav, span, text, ul)
 import Html.Attributes exposing (class, classList, href)
@@ -17,6 +16,7 @@ type Page
     | Login
     | Register
     | Settings
+    | Profile
 
 
 simpleView : Maybe User -> Page -> { title : String, content : Html msg } -> Document msg
@@ -65,7 +65,7 @@ viewHeader maybeUser currentPage =
                         [ linkTo Route.Home [ text "Home" ]
                         , linkTo Route.Home [ icon "ion-compose", text "\u{00A0}New Article" ]
                         , linkTo Route.Settings [ icon "ion-gear-a", text "\u{00A0}Settings" ]
-                        , linkTo Route.Home [ img [ class "user-pic", src user.image ] [], text user.username ]
+                        , linkTo (Route.Profile user.username) [ img [ class "user-pic", src user.image ] [], (text << Username.toString) user.username ]
                         ]
 
                     Nothing ->
@@ -97,6 +97,9 @@ isActive page route =
             True
 
         ( Settings, Route.Settings ) ->
+            True
+
+        ( Profile, Route.Profile _ ) ->
             True
 
         _ ->

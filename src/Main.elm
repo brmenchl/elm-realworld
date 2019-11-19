@@ -7,6 +7,7 @@ import Page exposing (Page(..))
 import Page.Home as Home
 import Page.Login as Login
 import Page.NotFound as NotFound
+import Page.Profile as Profile
 import Page.Register as Register
 import Page.Settings as Settings
 import Route exposing (Route, replaceUrl)
@@ -23,6 +24,7 @@ type Model
     | Login Login.Model
     | Register Register.Model
     | Settings Settings.Model
+    | Profile Profile.Model
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -48,6 +50,9 @@ toSession model =
 
         Settings settings ->
             Settings.toSession settings
+
+        Profile profile ->
+            Profile.toSession profile
 
 
 
@@ -82,6 +87,9 @@ view model =
         Settings settings ->
             viewPage Page.Settings SettingsMsg (Settings.view settings)
 
+        Profile profile ->
+            viewPage Page.Profile ProfileMsg (Profile.view profile)
+
 
 
 -- UPDATE
@@ -94,6 +102,7 @@ type Msg
     | HomeMsg Home.Msg
     | RegisterMsg Register.Msg
     | SettingsMsg Settings.Msg
+    | ProfileMsg Profile.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -132,6 +141,10 @@ update msg model =
             subUpdate Settings SettingsMsg <|
                 Settings.update submsg settings
 
+        ( ProfileMsg submsg, Profile profile ) ->
+            subUpdate Profile ProfileMsg <|
+                Profile.update submsg profile
+
         ( _, _ ) ->
             ( model, Cmd.none )
 
@@ -164,6 +177,9 @@ updateRoute maybeRoute model =
                     ( model
                     , replaceUrl (.key <| toSession model) Route.Login
                     )
+
+        Just (Route.Profile username) ->
+            subUpdate Profile ProfileMsg (Profile.init session username)
 
 
 subUpdate : (subModel -> Model) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
