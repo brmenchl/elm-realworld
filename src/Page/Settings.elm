@@ -1,15 +1,16 @@
 module Page.Settings exposing (Model, Msg, init, toSession, update, view)
 
 import Asset exposing (imageUrl)
-import Html exposing (Html, button, div, fieldset, form, h1, input, text, textarea)
+import Html exposing (Html, button, div, fieldset, form, h1, hr, input, text, textarea)
 import Html.Attributes exposing (class, placeholder, rows, type_, value)
-import Html.Events exposing (onInput)
-import Model.Session exposing (AuthenticatedSession, UnknownSession)
+import Html.Events exposing (onClick, onInput)
+import Model.Session exposing (UnknownSession)
 import Model.User exposing (User)
+import Route
 
 
 type alias Model =
-    { session : AuthenticatedSession
+    { session : UnknownSession
     , form : Form
     , problems : List Problem
     }
@@ -28,17 +29,27 @@ type alias Form =
     }
 
 
-formFromUser : User -> Form
-formFromUser user =
-    { imageUrl = imageUrl user.image
-    , username = user.username
-    , bio = Maybe.withDefault "" user.bio
-    , email = user.email
-    , password = ""
-    }
+formFromUser : Maybe User -> Form
+formFromUser maybeUser =
+    case maybeUser of
+        Just user ->
+            { imageUrl = imageUrl user.image
+            , username = user.username
+            , bio = Maybe.withDefault "" user.bio
+            , email = user.email
+            , password = ""
+            }
+
+        Nothing ->
+            { imageUrl = ""
+            , username = ""
+            , bio = ""
+            , email = ""
+            , password = ""
+            }
 
 
-init : AuthenticatedSession -> ( Model, Cmd Msg )
+init : UnknownSession -> ( Model, Cmd Msg )
 init session =
     ( { session = session
       , form = formFromUser session.user
@@ -54,6 +65,7 @@ type Msg
     | ChangedBio String
     | ChangedEmail String
     | ChangedPassword String
+    | LogoutClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,6 +85,14 @@ update msg model =
 
         ChangedPassword password ->
             updateForm (\form -> { form | password = password }) model
+
+        LogoutClicked ->
+            ( { model | session = clearUser model.session }, Route.replaceUrl model.session.key Route.Home )
+
+
+clearUser : UnknownSession -> UnknownSession
+clearUser session =
+    { session | user = Nothing }
 
 
 updateForm : (Form -> Form) -> Model -> ( Model, Cmd Msg )
@@ -113,12 +133,15 @@ content model =
                                 [ input [ class "form-control form-control-lg", type_ "text", placeholder "Email", value model.form.email, onInput ChangedEmail ] []
                                 ]
                             , fieldset [ class "form-group" ]
-                                [ input [ class "form-control form-control-lg", type_ "password", placeholder "Password", value model.form.password, onInput ChangedPassword ] []
+                                [ input [ class "form-control form-control-lg", type_ "password", placeholder "New Password", value model.form.password, onInput ChangedPassword ] []
                                 ]
                             , button [ class "btn btn-lg btn-primary pull-xs-right" ]
                                 [ text "Update Settings" ]
                             ]
                         ]
+                    , hr [] []
+                    , button [ onClick LogoutClicked, class "btn btn-outline-danger" ]
+                        [ text "Or click here to logout." ]
                     ]
                 ]
             ]
@@ -131,4 +154,4 @@ content model =
 
 toSession : Model -> UnknownSession
 toSession model =
-    UnknownSession model.session.key (Just model.session.user)
+    model.session

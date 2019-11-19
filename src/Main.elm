@@ -157,8 +157,8 @@ updateRoute maybeRoute model =
 
         Just Route.Settings ->
             case session.user of
-                Just user ->
-                    subUpdate Settings SettingsMsg (Settings.init { key = session.key, user = user })
+                Just _ ->
+                    subUpdate Settings SettingsMsg (Settings.init session)
 
                 Nothing ->
                     ( model
