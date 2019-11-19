@@ -5,10 +5,11 @@ import Http
 import Http.Detailed
 import Json.Decode exposing (Decoder, decodeString, field, keyValuePairs, list, map, string)
 import Model.Credentials exposing (Credentials, toTokenString)
+import RemoteData
 
 
 type alias RequestResponse body =
-    Result (Http.Detailed.Error String) ( Http.Metadata, body )
+    RemoteData.RemoteData (Http.Detailed.Error String) ( Http.Metadata, body )
 
 
 
@@ -56,7 +57,7 @@ get { endpoint, credentials, toMsg, decoder } =
                 Nothing ->
                     []
         , body = Http.emptyBody
-        , expect = Http.Detailed.expectJson toMsg decoder
+        , expect = Http.Detailed.expectJson (RemoteData.fromResult >> toMsg) decoder
         }
 
 
@@ -75,7 +76,7 @@ post { endpoint, credentials, toMsg, decoder, body } =
 
                 Nothing ->
                     []
-        , expect = Http.Detailed.expectJson toMsg decoder
+        , expect = Http.Detailed.expectJson (RemoteData.fromResult >> toMsg) decoder
         }
 
 

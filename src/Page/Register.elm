@@ -9,6 +9,7 @@ import Html.Events exposing (onInput, onSubmit)
 import Html.Extra exposing (nothing)
 import Model.Session exposing (UnknownSession)
 import Model.User exposing (User)
+import RemoteData exposing (RemoteData(..))
 import Route exposing (replaceUrl, toHref)
 
 
@@ -84,17 +85,20 @@ update msg model =
                 Err problems ->
                     ( { model | problems = List.map ClientError problems }, Cmd.none )
 
-        CompletedRegister (Err error) ->
+        CompletedRegister (Failure error) ->
             let
                 serverProblems =
                     decodeErrors error
             in
             ( { model | problems = List.map ServerError serverProblems }, Cmd.none )
 
-        CompletedRegister (Ok ( _, user )) ->
+        CompletedRegister (Success ( _, user )) ->
             ( { model | session = updateUser model.session (Just user) }
             , replaceUrl model.session.key Route.Home
             )
+
+        CompletedRegister _ ->
+            ( model, Cmd.none )
 
         ChangedUsername username ->
             updateForm (\form -> { form | username = username }) model
