@@ -4,7 +4,7 @@ import Api exposing (RequestResponse)
 import Api.Endpoint as Endpoint
 import Http
 import Json.Encode exposing (Value, object, string)
-import Model.User exposing (User, userDecoder)
+import Model.User as User exposing (User)
 
 
 type LoginCredentials
@@ -17,18 +17,18 @@ toLoginCredentials email password =
 
 
 loginRequest : (RequestResponse User -> msg) -> LoginCredentials -> Cmd msg
-loginRequest toMsg credentials =
+loginRequest toMsg loginCredentials =
     Api.post
         { endpoint = Endpoint.login
         , credentials = Nothing
-        , body = Http.jsonBody (credentialsEncoder credentials)
+        , body = Http.jsonBody (loginCredentialsEncoder loginCredentials)
         , toMsg = toMsg
-        , decoder = userDecoder
+        , decoder = User.decoder
         }
 
 
-credentialsEncoder : LoginCredentials -> Value
-credentialsEncoder (LoginCredentials email password) =
+loginCredentialsEncoder : LoginCredentials -> Value
+loginCredentialsEncoder (LoginCredentials email password) =
     object
         [ ( "user"
           , object

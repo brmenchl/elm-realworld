@@ -1,4 +1,4 @@
-module Asset exposing (Image, defaultAvatar, error, imageDecoder, imageUrl, loading, src)
+module Image exposing (Image, defaultAvatar, error, decoder, imageUrl, loading, src)
 
 import Html exposing (Attribute)
 import Html.Attributes as Attr
@@ -40,6 +40,6 @@ src image =
     Attr.src (imageUrl image)
 
 
-imageDecoder : Decoder Image
-imageDecoder =
+decoder : Decoder Image
+decoder =
     map Remote string

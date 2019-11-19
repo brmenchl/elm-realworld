@@ -1,27 +1,28 @@
-module Model.User exposing (User, userDecoder)
+module Model.User exposing (User, decoder)
 
-import Asset exposing (Image, imageDecoder)
+import Image exposing (Image, defaultAvatar)
 import Json.Decode as Decode exposing (Decoder, field, nullable, string)
 import Json.Decode.Pipeline exposing (optional, required)
-import Model.Credentials exposing (Credentials, credentialsDecoder)
+import Model.Credentials as Credentials exposing (Credentials)
+import Model.Username as Username exposing (Username)
 
 
 type alias User =
     { email : String
     , credentials : Credentials
-    , username : String
+    , username : Username
     , bio : Maybe String
     , image : Image
     }
 
 
-userDecoder : Decoder User
-userDecoder =
+decoder : Decoder User
+decoder =
     field "user"
         (Decode.succeed User
             |> required "email" string
-            |> required "token" credentialsDecoder
-            |> required "username" string
+            |> required "token" Credentials.decoder
+            |> required "username" Username.decoder
             |> required "bio" (nullable string)
-            |> optional "image" imageDecoder Asset.defaultAvatar
+            |> optional "image" Image.decoder defaultAvatar
         )

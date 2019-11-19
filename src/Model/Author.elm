@@ -1,19 +1,20 @@
-module Model.Author exposing (Author, authorDecoder)
+module Model.Author exposing (Author, decoder)
 
-import Json.Decode as Decode exposing (Decoder, string, nullable)
+import Image exposing (Image)
+import Json.Decode as Decode exposing (Decoder, nullable, string)
 import Json.Decode.Pipeline exposing (required)
-import Asset exposing (Image, imageDecoder)
+
 
 type alias Author =
-  {
-    username : String
+    { username : String
     , bio : Maybe String
     , image : Image
-  }
+    }
 
-authorDecoder : Decoder Author
-authorDecoder =
-  Decode.succeed Author
-    |> required "username" string
-    |> required "bio" (nullable string)
-    |> required "image" imageDecoder
+
+decoder : Decoder Author
+decoder =
+    Decode.succeed Author
+        |> required "username" string
+        |> required "bio" (nullable string)
+        |> required "image" Image.decoder

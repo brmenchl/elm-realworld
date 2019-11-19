@@ -173,5 +173,5 @@ viewError problem =
 
 
 toSession : Model -> UnknownSession
-toSession model =
-    model.session
+toSession =
+    .session

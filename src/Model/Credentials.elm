@@ -1,4 +1,4 @@
-module Model.Credentials exposing (Credentials(..), credentialsDecoder, toTokenString)
+module Model.Credentials exposing (Credentials(..), decoder, toTokenString)
 
 import Json.Decode exposing (Decoder, map, string)
 
@@ -12,6 +12,6 @@ toTokenString (Credentials tokenString) =
     tokenString
 
 
-credentialsDecoder : Decoder Credentials
-credentialsDecoder =
+decoder : Decoder Credentials
+decoder =
     map Credentials string

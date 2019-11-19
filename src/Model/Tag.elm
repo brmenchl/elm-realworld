@@ -1,4 +1,4 @@
-module Model.Tag exposing (Tag, tagListDecoder, tagName)
+module Model.Tag exposing (Tag, listDecoder, tagName)
 
 import Json.Decode as Decode exposing (Decoder, field, list, string)
 
@@ -16,11 +16,11 @@ tagName (Tag name) =
 -- Decoder
 
 
-tagListDecoder : Decoder (List Tag)
-tagListDecoder =
-    field "tags" (list tagDecoder)
+listDecoder : Decoder (List Tag)
+listDecoder =
+    field "tags" (list decoder)
 
 
-tagDecoder : Decoder Tag
-tagDecoder =
+decoder : Decoder Tag
+decoder =
     Decode.map Tag string

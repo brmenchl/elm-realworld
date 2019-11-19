@@ -4,7 +4,9 @@ import Asset exposing (src)
 import Browser exposing (Document)
 import Html exposing (Html, a, div, footer, img, li, nav, span, text, ul)
 import Html.Attributes exposing (class, classList, href)
+import Image exposing (src)
 import Model.User exposing (User)
+import Model.Username as Username
 import Route exposing (Route(..))
 import View.Icon exposing (icon)
 

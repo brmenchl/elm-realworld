@@ -3,11 +3,11 @@ module Page.Home exposing (Model, Msg, init, toSession, update, view)
 import Api exposing (RequestResponse, decodeErrors)
 import Api.Article exposing (listArticlesRequest)
 import Api.Tag exposing (listTagsRequest)
-import Asset exposing (src)
 import DateFormat
 import Html exposing (Html, a, button, div, h1, i, img, li, p, span, text, ul)
 import Html.Attributes exposing (class, href)
 import Html.Extra as Html
+import Image exposing (src)
 import Model.Article exposing (Article)
 import Model.Session exposing (UnknownSession)
 import Model.Tag exposing (Tag, tagName)
@@ -212,5 +212,5 @@ formatCreatedAt =
 
 
 toSession : Model -> UnknownSession
-toSession model =
-    model.session
+toSession =
+    .session

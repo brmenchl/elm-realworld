@@ -1,11 +1,12 @@
 module Page.Settings exposing (Model, Msg, init, toSession, update, view)
 
-import Asset exposing (imageUrl)
 import Html exposing (Html, button, div, fieldset, form, h1, hr, input, text, textarea)
 import Html.Attributes exposing (class, placeholder, rows, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Image exposing (imageUrl)
 import Model.Session exposing (UnknownSession)
 import Model.User exposing (User)
+import Model.Username as Username
 import Route
 
 
@@ -34,7 +35,7 @@ formFromUser maybeUser =
     case maybeUser of
         Just user ->
             { imageUrl = imageUrl user.image
-            , username = user.username
+            , username = Username.toString user.username
             , bio = Maybe.withDefault "" user.bio
             , email = user.email
             , password = ""
@@ -153,5 +154,4 @@ content model =
 
 
 toSession : Model -> UnknownSession
-toSession model =
-    model.session
+toSession = .session

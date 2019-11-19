@@ -2,7 +2,7 @@ module Api.Article exposing (listArticlesRequest)
 
 import Api exposing (RequestResponse)
 import Api.Endpoint as Endpoint
-import Model.Article exposing (Article, articleListDecoder)
+import Model.Article as Article exposing (Article, listDecoder)
 import Url.Builder exposing (QueryParameter)
 
 
@@ -12,7 +12,7 @@ listArticlesRequest toMsg =
         { endpoint = Endpoint.articles (paginatedListQueryParams { page = 1, limit = 10 })
         , credentials = Nothing
         , toMsg = toMsg
-        , decoder = articleListDecoder
+        , decoder = Article.listDecoder
         }
 
 
