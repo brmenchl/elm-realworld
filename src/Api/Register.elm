@@ -3,7 +3,6 @@ module Api.Register exposing (RegisterCredentials, UpdateUserCredentials, regist
 import Api exposing (RequestResponse)
 import Api.Endpoint as Endpoint
 import Http
-import Image exposing (Image)
 import Json.Encode exposing (Value, object, string)
 import Model.Credentials exposing (Credentials)
 import Model.User as User exposing (User)
