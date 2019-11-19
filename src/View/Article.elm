@@ -2,10 +2,11 @@ module View.Article exposing (viewArticlePreviewList)
 
 import Api exposing (RequestResponse, decodeErrors)
 import DateFormat
-import Html exposing (Html, a, button, div, h1, i, img, p, span, text)
+import Html exposing (Html, a, button, div, h1, i, img, li, p, span, text, ul)
 import Html.Attributes exposing (class, href)
 import Image exposing (src)
 import Model.Article exposing (Article)
+import Model.Tag as Tag exposing (Tag)
 import RemoteData exposing (RemoteData(..))
 import Time
 
@@ -32,31 +33,37 @@ viewArticlePreview article =
             , p [] [ text article.description ]
             , span [] [ text "Read more..." ]
             ]
+        , ul [ class "tag-list" ]
+            (List.map
+                viewArticleTag
+                article.tags
+            )
         ]
+
+
+viewArticleTag : Tag -> Html msg
+viewArticleTag tag =
+    li [ class "tag-default tag-pill tag-outline" ] [ text (Tag.tagName tag) ]
 
 
 viewArticlePreviewList : RequestResponse (List Article) -> List (Html msg)
 viewArticlePreviewList response =
-    let
-        articleWrapper =
-            div [ class "article-preview " ]
-    in
-    List.map (articleWrapper << List.singleton) <|
-        case response of
-            Success ( _, [] ) ->
-                [ text "No articles are here... yet." ]
+    case response of
+        Success ( _, [] ) ->
+            [ div [ class "article-previoew" ] [ text "No articles are here... yet." ] ]
 
-            Success ( _, articles ) ->
-                List.map viewArticlePreview articles
+        Success ( _, articles ) ->
+            List.map viewArticlePreview articles
 
-            Failure error ->
-                List.map text <| decodeErrors error
+        Failure error ->
+            List.map text <| decodeErrors error
 
-            Loading ->
-                [ text "Loading articles..." ]
+        Loading ->
+            [ div [ class "article-previoew" ] [ text "Loading articles..." ]
+            ]
 
-            NotAsked ->
-                [ text "No articles are here... yet." ]
+        NotAsked ->
+            [ div [ class "article-previoew" ] [ text "No articles are here... yet." ] ]
 
 
 

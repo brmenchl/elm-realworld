@@ -4,6 +4,7 @@ import Json.Decode as Decode exposing (Decoder, field, int, list, string)
 import Json.Decode.Extra exposing (datetime)
 import Json.Decode.Pipeline exposing (required)
 import Model.Author as Author exposing (Author)
+import Model.Tag as Tag exposing (Tag)
 import Time
 
 
@@ -13,6 +14,7 @@ type alias Article =
     , createdAt : Time.Posix
     , favoritesCount : Int
     , author : Author
+    , tags : List Tag
     }
 
 
@@ -29,3 +31,4 @@ decoder =
         |> required "createdAt" datetime
         |> required "favoritesCount" int
         |> required "author" Author.decoder
+        |> required "tagList" (list Tag.decoder)

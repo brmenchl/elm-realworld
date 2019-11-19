@@ -1,4 +1,4 @@
-module Model.Tag exposing (Tag, listDecoder, tagName)
+module Model.Tag exposing (Tag, decoder, listDecoder, tagName)
 
 import Json.Decode as Decode exposing (Decoder, field, list, string)
 
