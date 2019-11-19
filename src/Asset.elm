@@ -28,8 +28,8 @@ defaultAvatar =
 imageUrl : Image -> String
 imageUrl image =
     case image of
-        Local filename ->
-            "/assets/images/" ++ filename
+        Local _ ->
+            ""
 
         Remote remoteUrl ->
             remoteUrl
