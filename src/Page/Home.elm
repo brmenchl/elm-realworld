@@ -1,7 +1,7 @@
 module Page.Home exposing (Model, Msg, init, toSession, update, view)
 
 import Api exposing (WebData, mapSuccess)
-import Api.Article exposing (favoriteArticleRequest, feedArticlesRequest, listArticlesRequest, unfavoriteArticleRequest)
+import Api.Article exposing (ArticleListResponse, favoriteArticleRequest, feedArticlesRequest, listArticlesRequest, unfavoriteArticleRequest)
 import Api.Tag exposing (listTagsRequest)
 import Html exposing (Html, a, div, h1, li, p, text, ul)
 import Html.Attributes exposing (class, classList, href)
@@ -15,6 +15,7 @@ import RemoteData exposing (RemoteData(..))
 import Route
 import Util
 import View.Article exposing (viewArticlePreviewList)
+import View.PaginatedList exposing (PageDetails, viewPageLinks)
 
 
 type FeedType
@@ -25,6 +26,7 @@ type FeedType
 type alias Model =
     { session : Session
     , articles : WebData (List Article)
+    , pageDetails : WebData PageDetails
     , tags : WebData (List Tag)
     , feedType : FeedType
     }
@@ -34,11 +36,12 @@ init : Session -> ( Model, Cmd Msg )
 init session =
     ( { session = session
       , articles = Loading
+      , pageDetails = Loading
       , tags = Loading
       , feedType = defaultFeedType session
       }
     , Cmd.batch
-        [ listArticlesRequest CompletedLoadArticles
+        [ listArticlesRequest CompletedLoadArticles 1
         , listTagsRequest CompletedLoadTags
         ]
     )
@@ -55,18 +58,19 @@ defaultFeedType session =
 
 
 type Msg
-    = CompletedLoadArticles (WebData (List Article))
+    = CompletedLoadArticles (WebData ArticleListResponse)
     | CompletedLoadTags (WebData (List Tag))
     | ChangedFeedType FeedType
     | ToggledFavoritedArticle Slug
     | CompletedToggleFavoriteArticle (WebData Article)
+    | ClickedPage Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        CompletedLoadArticles articles ->
-            ( { model | articles = articles }, Cmd.none )
+        CompletedLoadArticles response ->
+            ( { model | articles = RemoteData.map .articles response, pageDetails = RemoteData.map .pageDetails response }, Cmd.none )
 
         CompletedLoadTags tags ->
             ( { model | tags = tags }, Cmd.none )
@@ -77,7 +81,7 @@ update msg model =
                     ( { model | articles = Loading, feedType = feedType }, feedArticlesRequest CompletedLoadArticles user.credentials )
 
                 ( Global, _ ) ->
-                    ( { model | articles = Loading, feedType = feedType }, listArticlesRequest CompletedLoadArticles )
+                    ( { model | articles = Loading, feedType = feedType }, listArticlesRequest CompletedLoadArticles 1 )
 
                 _ ->
                     ( model, Cmd.none )
@@ -108,6 +112,8 @@ update msg model =
         CompletedToggleFavoriteArticle _ ->
             ( model, Cmd.none )
 
+        ClickedPage page ->
+            ( { model | articles = Loading }, listArticlesRequest CompletedLoadArticles page)
 
 updateArticle : Article -> Slug -> WebData (List Article) -> WebData (List Article)
 updateArticle newArticle slug articles =
@@ -141,7 +147,11 @@ content model =
         [ viewBanner
         , div [ class "container page" ]
             [ div [ class "row" ]
-                [ div [ class "col-md-9" ] (feedToggle model.session.user model.feedType :: viewArticlePreviewList ToggledFavoritedArticle model.articles)
+                [ div [ class "col-md-9" ]
+                    (feedToggle model.session.user model.feedType
+                        :: viewArticlePreviewList ToggledFavoritedArticle model.articles
+                        ++ [ viewPageLinks ClickedPage model.pageDetails ]
+                    )
                 , viewPopularTags model.tags
                 ]
             ]

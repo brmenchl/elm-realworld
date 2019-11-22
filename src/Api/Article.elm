@@ -1,30 +1,48 @@
-module Api.Article exposing (favoriteArticleRequest, feedArticlesRequest, listArticlesRequest, loadArticleRequest, unfavoriteArticleRequest)
+module Api.Article exposing (ArticleListResponse, favoriteArticleRequest, feedArticlesRequest, listArticlesRequest, loadArticleRequest, unfavoriteArticleRequest)
 
 import Api exposing (WebData)
 import Api.Endpoint as Endpoint
-import Json.Decode exposing (field, list)
+import Json.Decode as Decode exposing (Decoder, field, int, list)
+import Json.Decode.Pipeline exposing (required)
 import Model.Article as Article exposing (Article, Slug)
 import Model.Credentials exposing (Credentials)
 import Url.Builder exposing (QueryParameter)
+import View.PaginatedList exposing (PageDetails, getPageDetails)
 
 
-listArticlesRequest : (WebData (List Article) -> msg) -> Cmd msg
-listArticlesRequest toMsg =
+type alias ArticleListResponse =
+    { articles : List Article, pageDetails : PageDetails }
+
+
+type alias PageRequestDetails =
+    { page : Int, limit : Int }
+
+
+listArticlesRequest : (WebData ArticleListResponse -> msg) -> Int -> Cmd msg
+listArticlesRequest toMsg page =
+    let
+        pageRequestDetails =
+            { page = page, limit = 10 }
+    in
     Api.get
-        { endpoint = Endpoint.articles (paginatedListQueryParams { page = 1, limit = 10 })
+        { endpoint = Endpoint.articles (paginatedListQueryParams pageRequestDetails)
         , credentials = Nothing
         , toMsg = toMsg
-        , decoder = field "articles" (list Article.decoder)
+        , decoder = listDecoder pageRequestDetails
         }
 
 
-feedArticlesRequest : (WebData (List Article) -> msg) -> Credentials -> Cmd msg
+feedArticlesRequest : (WebData ArticleListResponse -> msg) -> Credentials -> Cmd msg
 feedArticlesRequest toMsg credentials =
+    let
+        pageRequestDetails =
+            { page = 1, limit = 10 }
+    in
     Api.get
-        { endpoint = Endpoint.feed (paginatedListQueryParams { page = 1, limit = 10 })
+        { endpoint = Endpoint.feed (paginatedListQueryParams pageRequestDetails)
         , credentials = Just credentials
         , toMsg = toMsg
-        , decoder = field "articles" (list Article.decoder)
+        , decoder = listDecoder pageRequestDetails
         }
 
 
@@ -68,3 +86,21 @@ paginatedListQueryParams { page, limit } =
     [ Url.Builder.string "limit" (String.fromInt limit)
     , Url.Builder.string "offset" (String.fromInt offset)
     ]
+
+
+
+-- decoder
+
+
+toArticleListResponse : PageRequestDetails -> Int -> List Article -> ArticleListResponse
+toArticleListResponse { page, limit } totalItems articles =
+    { articles = articles
+    , pageDetails = { currentPage = page, totalPages = round <| toFloat totalItems / toFloat limit }
+    }
+
+
+listDecoder : PageRequestDetails -> Decoder ArticleListResponse
+listDecoder details =
+    Decode.succeed (toArticleListResponse details)
+        |> required "articlesCount" int
+        |> required "articles" (list Article.decoder)
