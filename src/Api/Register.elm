@@ -1,6 +1,6 @@
 module Api.Register exposing (RegisterCredentials, UpdateUserCredentials, registerRequest, toRegisterCredentials, updateUserRequest)
 
-import Api exposing (RequestResponse)
+import Api exposing (WebData)
 import Api.Endpoint as Endpoint
 import Http
 import Json.Encode exposing (Value, object, string)
@@ -26,23 +26,23 @@ toRegisterCredentials username email password =
     RegisterCredentials username email password
 
 
-registerRequest : (RequestResponse User -> msg) -> RegisterCredentials -> Cmd msg
+registerRequest : (WebData User -> msg) -> RegisterCredentials -> Cmd msg
 registerRequest toMsg registerCredentials =
     Api.post
         { endpoint = Endpoint.users
         , credentials = Nothing
-        , body = Http.jsonBody (registerCredentialsEncoder registerCredentials)
+        , body = Just <| Http.jsonBody (registerCredentialsEncoder registerCredentials)
         , toMsg = toMsg
         , decoder = User.decoder
         }
 
 
-updateUserRequest : (RequestResponse User -> msg) -> Credentials -> UpdateUserCredentials -> Cmd msg
+updateUserRequest : (WebData User -> msg) -> Credentials -> UpdateUserCredentials -> Cmd msg
 updateUserRequest toMsg credentials updateUserCredentials =
     Api.put
         { endpoint = Endpoint.user
         , credentials = Just credentials
-        , body = Http.jsonBody (updateUserCredentialsEncoder updateUserCredentials)
+        , body = Just <| Http.jsonBody (updateUserCredentialsEncoder updateUserCredentials)
         , toMsg = toMsg
         , decoder = User.decoder
         }

@@ -1,15 +1,10 @@
-module Model.Session exposing (AuthenticatedSession, UnknownSession)
+module Model.Session exposing (Session)
 
 import Browser.Navigation as Nav
 import Model.User exposing (User)
 
 
-type alias AuthenticatedSession =
-    { key : Nav.Key
-    , user : User
-    }
-
-type alias UnknownSession =
+type alias Session =
     { key : Nav.Key
     , user : Maybe User
     }

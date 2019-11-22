@@ -3,6 +3,7 @@ module Route exposing (Route(..), fromUrl, replaceUrl, toHref)
 import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
+import Model.Slug as Slug exposing (Slug)
 import Model.Username as Username exposing (Username)
 import Url exposing (Url)
 import Url.Parser as Parser exposing (Parser, oneOf, s, top)
@@ -14,6 +15,7 @@ type Route
     | Register
     | Settings
     | Profile Username
+    | Article Slug
 
 
 parser : Parser (Route -> a) a
@@ -24,6 +26,7 @@ parser =
         , Parser.map Register <| s "register"
         , Parser.map Settings <| s "settings"
         , Parser.map Profile <| Username.urlParser
+        , Parser.map Article <| Slug.urlParser
         ]
 
 
@@ -59,6 +62,9 @@ path route =
 
             Profile username ->
                 [ Username.toHandle username ]
+
+            Article slug ->
+                [ Slug.toString slug ]
 
 
 toHref : Route -> Attribute msg

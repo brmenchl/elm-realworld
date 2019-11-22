@@ -1,17 +1,20 @@
 module Page.Home exposing (Model, Msg, init, toSession, update, view)
 
-import Api exposing (RequestResponse)
-import Api.Article exposing (feedArticlesRequest, listArticlesRequest)
+import Api exposing (WebData, mapSuccess)
+import Api.Article exposing (favoriteArticleRequest, feedArticlesRequest, listArticlesRequest, unfavoriteArticleRequest)
 import Api.Tag exposing (listTagsRequest)
 import Html exposing (Html, a, div, h1, li, p, text, ul)
 import Html.Attributes exposing (class, classList, href)
 import Html.Events exposing (onClick)
 import Html.Extra as Html
-import Model.Article exposing (Article)
-import Model.Session exposing (UnknownSession)
+import Model.Article as Article exposing (Article)
+import Model.Session exposing (Session)
+import Model.Slug exposing (Slug)
 import Model.Tag exposing (Tag, tagName)
 import Model.User exposing (User)
 import RemoteData exposing (RemoteData(..))
+import Route
+import Util
 import View.Article exposing (viewArticlePreviewList)
 
 
@@ -21,19 +24,19 @@ type FeedType
 
 
 type alias Model =
-    { session : UnknownSession
-    , articles : RequestResponse (List Article)
-    , tags : RequestResponse (List Tag)
+    { session : Session
+    , articles : WebData (List Article)
+    , tags : WebData (List Tag)
     , feedType : FeedType
     }
 
 
-init : UnknownSession -> ( Model, Cmd Msg )
+init : Session -> ( Model, Cmd Msg )
 init session =
     ( { session = session
       , articles = Loading
       , tags = Loading
-      , feedType = Global
+      , feedType = defaultFeedType session
       }
     , Cmd.batch
         [ listArticlesRequest CompletedLoadArticles
@@ -42,10 +45,22 @@ init session =
     )
 
 
+defaultFeedType : Session -> FeedType
+defaultFeedType session =
+    case session.user of
+        Just _ ->
+            Personal
+
+        Nothing ->
+            Global
+
+
 type Msg
-    = CompletedLoadArticles (RequestResponse (List Article))
-    | CompletedLoadTags (RequestResponse (List Tag))
-    | ChangeFeedType FeedType
+    = CompletedLoadArticles (WebData (List Article))
+    | CompletedLoadTags (WebData (List Tag))
+    | ChangedFeedType FeedType
+    | ToggledFavoritedArticle Slug
+    | CompletedToggleFavoriteArticle (WebData Article)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -57,18 +72,57 @@ update msg model =
         CompletedLoadTags tags ->
             ( { model | tags = tags }, Cmd.none )
 
-        ChangeFeedType feedType ->
-            case feedType of
-                Personal ->
-                    case model.session.user of
-                        Just u ->
-                            ( { model | articles = Loading, feedType = feedType }, feedArticlesRequest CompletedLoadArticles u.credentials )
+        ChangedFeedType feedType ->
+            case ( feedType, model.session.user ) of
+                ( Personal, Just user ) ->
+                    ( { model | articles = Loading, feedType = feedType }, feedArticlesRequest CompletedLoadArticles user.credentials )
 
-                        Nothing ->
-                            ( model, Cmd.none )
-
-                Global ->
+                ( Global, _ ) ->
                     ( { model | articles = Loading, feedType = feedType }, listArticlesRequest CompletedLoadArticles )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        ToggledFavoritedArticle slug ->
+            let
+                maybeArticle =
+                    Util.find (\a -> a.slug == slug) <| RemoteData.withDefault [] model.articles
+            in
+            case ( model.session.user, maybeArticle ) of
+                ( Just user, Just article ) ->
+                    let
+                        toggleFavoriteArticleRequest request =
+                            request CompletedToggleFavoriteArticle user.credentials slug
+                    in
+                    if article.favorited then
+                        ( model, toggleFavoriteArticleRequest unfavoriteArticleRequest )
+
+                    else
+                        ( model, toggleFavoriteArticleRequest favoriteArticleRequest )
+
+                _ ->
+                    ( model, Route.replaceUrl model.session.key Route.Login )
+
+        CompletedToggleFavoriteArticle (Success article) ->
+            ( { model | articles = updateArticle article article.slug model.articles }, Cmd.none )
+
+        CompletedToggleFavoriteArticle _ ->
+            ( model, Cmd.none )
+
+
+updateArticle : Article -> Slug -> WebData (List Article) -> WebData (List Article)
+updateArticle newArticle slug articles =
+    mapSuccess
+        (List.map
+            (\article ->
+                if article.slug == slug then
+                    newArticle
+
+                else
+                    article
+            )
+        )
+        articles
 
 
 
@@ -88,7 +142,7 @@ content model =
         [ viewBanner
         , div [ class "container page" ]
             [ div [ class "row" ]
-                [ div [ class "col-md-9" ] (feedToggle model.session.user model.feedType :: viewArticlePreviewList model.articles)
+                [ div [ class "col-md-9" ] (feedToggle model.session.user model.feedType :: viewArticlePreviewList ToggledFavoritedArticle model.articles)
                 , viewPopularTags model.tags
                 ]
             ]
@@ -96,15 +150,15 @@ content model =
 
 
 feedToggle : Maybe User -> FeedType -> Html Msg
-feedToggle user currentFeedType =
+feedToggle maybeUser currentFeedType =
     let
         feedToggleItem ( title, feedType ) =
             li [ class "nav-item" ]
-                [ a [ classList [ ( "nav-link", True ), ( "active", currentFeedType == feedType ) ], href "", onClick (ChangeFeedType feedType) ] [ text title ]
+                [ a [ classList [ ( "nav-link", True ), ( "active", currentFeedType == feedType ) ], href "", onClick (ChangedFeedType feedType) ] [ text title ]
                 ]
 
         userFeedToggle =
-            case user of
+            case maybeUser of
                 Just _ ->
                     [ ( "Your Feed", Personal ) ]
 
@@ -117,7 +171,7 @@ feedToggle user currentFeedType =
         ]
 
 
-viewPopularTags : RequestResponse (List Tag) -> Html Msg
+viewPopularTags : WebData (List Tag) -> Html Msg
 viewPopularTags tags =
     div [ class "col-md-3" ]
         [ div [ class "sidebar" ]
@@ -131,10 +185,10 @@ viewPopularTags tags =
                     Loading ->
                         [ text "Loading tags..." ]
 
-                    Success ( _, [] ) ->
+                    Success [] ->
                         [ text "No tags are here... yet." ]
 
-                    Success ( _, tagList ) ->
+                    Success tagList ->
                         List.map tagPillLink tagList
 
                     _ ->
@@ -165,6 +219,6 @@ viewBanner =
 -- Session
 
 
-toSession : Model -> UnknownSession
+toSession : Model -> Session
 toSession =
     .session

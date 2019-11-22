@@ -1,20 +1,20 @@
 module Page.Login exposing (Model, Msg, init, toSession, update, view)
 
-import Api exposing (RequestResponse, decodeErrors)
+import Api exposing (WebData)
 import Api.Login exposing (loginRequest, toLoginCredentials)
 import Form exposing (Validator, all, fromValid, required, validate)
 import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, text, ul)
 import Html.Attributes exposing (class, placeholder, type_)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Extra exposing (nothing)
-import Model.Session exposing (UnknownSession)
+import Model.Session exposing (Session)
 import Model.User exposing (User)
 import RemoteData exposing (RemoteData(..))
 import Route exposing (replaceUrl, toHref)
 
 
 type alias Model =
-    { session : UnknownSession
+    { session : Session
     , problems : List Problem
     , form : Form
     }
@@ -44,7 +44,7 @@ formValidator =
         ]
 
 
-init : UnknownSession -> ( Model, Cmd msg )
+init : Session -> ( Model, Cmd msg )
 init session =
     ( { session = session
       , problems = []
@@ -58,7 +58,7 @@ type Msg
     = SubmittedForm
     | ChangedEmail String
     | ChangedPassword String
-    | CompletedLogin (RequestResponse User)
+    | CompletedLogin (WebData User)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -78,14 +78,10 @@ update msg model =
                 Err problems ->
                     ( { model | problems = List.map ClientError problems }, Cmd.none )
 
-        CompletedLogin (Failure error) ->
-            let
-                serverProblems =
-                    decodeErrors error
-            in
-            ( { model | problems = List.map ServerError serverProblems }, Cmd.none )
+        CompletedLogin (Failure errors) ->
+            ( { model | problems = List.map ServerError errors }, Cmd.none )
 
-        CompletedLogin (Success ( _, user )) ->
+        CompletedLogin (Success user) ->
             ( { model | session = updateUser model.session (Just user) }
             , replaceUrl model.session.key Route.Home
             )
@@ -100,7 +96,7 @@ update msg model =
             updateForm (\form -> { form | password = password }) model
 
 
-updateUser : UnknownSession -> Maybe User -> UnknownSession
+updateUser : Session -> Maybe User -> Session
 updateUser session user =
     { session | user = user }
 
@@ -172,6 +168,6 @@ viewError problem =
 -- Session
 
 
-toSession : Model -> UnknownSession
+toSession : Model -> Session
 toSession =
     .session

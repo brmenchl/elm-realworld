@@ -1,13 +1,13 @@
 module Page.Settings exposing (Model, Msg, init, toSession, update, view)
 
-import Api exposing (RequestResponse, decodeErrors)
+import Api exposing (WebData)
 import Api.Register exposing (updateUserRequest)
 import Form exposing (Validator, all, atLeastMinimum, atMostMaximum, firstOf, fromValid, required, validate)
 import Html exposing (Html, button, div, fieldset, form, h1, hr, input, text, textarea)
 import Html.Attributes exposing (class, placeholder, rows, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Image exposing (remoteImageUrl)
-import Model.Session exposing (UnknownSession)
+import Model.Session exposing (Session)
 import Model.User exposing (User)
 import Model.Username as Username
 import RemoteData exposing (RemoteData(..))
@@ -15,7 +15,7 @@ import Route exposing (replaceUrl)
 
 
 type alias Model =
-    { session : UnknownSession
+    { session : Session
     , form : Form
     , problems : List Problem
     }
@@ -66,7 +66,7 @@ formValidator =
         ]
 
 
-init : UnknownSession -> ( Model, Cmd Msg )
+init : Session -> ( Model, Cmd Msg )
 init session =
     ( { session = session
       , form = formFromUser session.user
@@ -83,7 +83,7 @@ type Msg
     | ChangedEmail String
     | ChangedPassword String
     | SubmittedForm
-    | CompletedUpdateUser (RequestResponse User)
+    | CompletedUpdateUser (WebData User)
     | LogoutClicked
 
 
@@ -107,17 +107,13 @@ update msg model =
                 Err problems ->
                     ( { model | problems = List.map ClientError problems }, Cmd.none )
 
-        CompletedUpdateUser (Success ( _, user )) ->
+        CompletedUpdateUser (Success user) ->
             ( { model | session = updateUser model.session (Just user) }
             , replaceUrl model.session.key (Route.Profile user.username)
             )
 
-        CompletedUpdateUser (Failure error) ->
-            let
-                serverProblems =
-                    decodeErrors error
-            in
-            ( { model | problems = List.map ServerError serverProblems }, Cmd.none )
+        CompletedUpdateUser (Failure errors) ->
+            ( { model | problems = List.map ServerError errors }, Cmd.none )
 
         CompletedUpdateUser _ ->
             ( model, Cmd.none )
@@ -141,12 +137,12 @@ update msg model =
             ( { model | session = clearUser model.session }, Route.replaceUrl model.session.key Route.Home )
 
 
-updateUser : UnknownSession -> Maybe User -> UnknownSession
+updateUser : Session -> Maybe User -> Session
 updateUser session user =
     { session | user = user }
 
 
-clearUser : UnknownSession -> UnknownSession
+clearUser : Session -> Session
 clearUser session =
     { session | user = Nothing }
 
@@ -208,6 +204,6 @@ content model =
 -- Session
 
 
-toSession : Model -> UnknownSession
+toSession : Model -> Session
 toSession =
     .session

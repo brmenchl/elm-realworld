@@ -2,8 +2,9 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
-import Model.Session exposing (UnknownSession)
+import Model.Session exposing (Session)
 import Page exposing (Page(..))
+import Page.Article as Article
 import Page.Home as Home
 import Page.Login as Login
 import Page.NotFound as NotFound
@@ -19,12 +20,13 @@ import Url exposing (Url)
 
 
 type Model
-    = NotFound UnknownSession
+    = NotFound Session
     | Home Home.Model
     | Login Login.Model
     | Register Register.Model
     | Settings Settings.Model
     | Profile Profile.Model
+    | Article Article.Model
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -33,7 +35,7 @@ init _ url key =
         (NotFound { key = key, user = Nothing })
 
 
-toSession : Model -> UnknownSession
+toSession : Model -> Session
 toSession model =
     case model of
         NotFound session ->
@@ -53,6 +55,9 @@ toSession model =
 
         Profile profile ->
             Profile.toSession profile
+
+        Article article ->
+            Article.toSession article
 
 
 
@@ -90,6 +95,9 @@ view model =
         Profile profile ->
             viewPage Page.Profile ProfileMsg (Profile.view profile)
 
+        Article article ->
+            viewPage Page.Other ArticleMsg (Article.view article)
+
 
 
 -- UPDATE
@@ -103,6 +111,7 @@ type Msg
     | RegisterMsg Register.Msg
     | SettingsMsg Settings.Msg
     | ProfileMsg Profile.Msg
+    | ArticleMsg Article.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -145,6 +154,10 @@ update msg model =
             subUpdate Profile ProfileMsg <|
                 Profile.update submsg profile
 
+        ( ArticleMsg submsg, Article article ) ->
+            subUpdate Article ArticleMsg <|
+                Article.update submsg article
+
         ( _, _ ) ->
             ( model, Cmd.none )
 
@@ -180,6 +193,9 @@ updateRoute maybeRoute model =
 
         Just (Route.Profile username) ->
             subUpdate Profile ProfileMsg (Profile.init session username)
+
+        Just (Route.Article slug) ->
+            subUpdate Article ArticleMsg (Article.init session slug)
 
 
 subUpdate : (subModel -> Model) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )

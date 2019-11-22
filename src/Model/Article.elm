@@ -1,9 +1,10 @@
-module Model.Article exposing (Article, listDecoder)
+module Model.Article exposing (Article, decoder, updateFavorited)
 
-import Json.Decode as Decode exposing (Decoder, field, int, list, string)
+import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
 import Json.Decode.Extra exposing (datetime)
 import Json.Decode.Pipeline exposing (required)
 import Model.Author as Author exposing (Author)
+import Model.Slug as Slug exposing (Slug)
 import Model.Tag as Tag exposing (Tag)
 import Time
 
@@ -13,14 +14,17 @@ type alias Article =
     , description : String
     , createdAt : Time.Posix
     , favoritesCount : Int
+    , favorited : Bool
     , author : Author
+    , body : String
     , tags : List Tag
+    , slug : Slug
     }
 
 
-listDecoder : Decoder (List Article)
-listDecoder =
-    field "articles" (list decoder)
+updateFavorited : Bool -> Article -> Article
+updateFavorited newFavorited article =
+    { article | favorited = newFavorited }
 
 
 decoder : Decoder Article
@@ -30,5 +34,8 @@ decoder =
         |> required "description" string
         |> required "createdAt" datetime
         |> required "favoritesCount" int
+        |> required "favorited" bool
         |> required "author" Author.decoder
+        |> required "body" string
         |> required "tagList" (list Tag.decoder)
+        |> required "slug" Slug.decoder

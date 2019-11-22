@@ -1,6 +1,6 @@
 module Page.Profile exposing (Model, Msg, init, toSession, update, view)
 
-import Api exposing (RequestResponse)
+import Api exposing (WebData)
 import Api.Profile exposing (loadProfileRequest)
 import Html exposing (Html, a, button, div, h4, i, img, li, p, text, ul)
 import Html.Attributes exposing (class, href)
@@ -8,7 +8,8 @@ import Html.Extra as Html
 import Image exposing (src)
 import Model.Article exposing (Article)
 import Model.Profile exposing (Profile)
-import Model.Session exposing (UnknownSession)
+import Model.Session exposing (Session)
+import Model.Slug exposing (Slug)
 import Model.Username as Username exposing (Username)
 import RemoteData exposing (RemoteData(..))
 import View.Article exposing (viewArticlePreviewList)
@@ -19,14 +20,14 @@ import View.Article exposing (viewArticlePreviewList)
 
 
 type alias Model =
-    { session : UnknownSession
+    { session : Session
     , username : Username
-    , profile : RequestResponse Profile
-    , articles : RequestResponse (List Article)
+    , profile : WebData Profile
+    , articles : WebData (List Article)
     }
 
 
-init : UnknownSession -> Username -> ( Model, Cmd Msg )
+init : Session -> Username -> ( Model, Cmd Msg )
 init session username =
     ( { session = session
       , username = username
@@ -42,7 +43,8 @@ init session username =
 
 
 type Msg
-    = CompletedLoadProfile (RequestResponse Profile)
+    = CompletedLoadProfile (WebData Profile)
+    | Test Slug
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -50,6 +52,9 @@ update msg model =
     case msg of
         CompletedLoadProfile profile ->
             ( { model | profile = profile }, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 
@@ -75,13 +80,13 @@ content model =
         Failure _ ->
             Html.nothing
 
-        Success ( _, profile ) ->
+        Success profile ->
             div [ class "profile-page" ]
                 [ profileInfo profile
                 , div [ class "container" ]
                     [ div [ class "row" ]
                         [ div [ class "col-xs-12 col-md-10 offset-md-1" ]
-                            (articlesToggle :: viewArticlePreviewList model.articles)
+                            (articlesToggle :: viewArticlePreviewList Test model.articles)
                         ]
                     ]
                 ]
@@ -130,6 +135,6 @@ articlesToggle =
 -- Session
 
 
-toSession : Model -> UnknownSession
+toSession : Model -> Session
 toSession =
     .session

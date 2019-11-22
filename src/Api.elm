@@ -1,4 +1,4 @@
-module Api exposing (RequestResponse, decodeErrors, get, post, put)
+module Api exposing (WebData, delete, get, mapSuccess, post, put)
 
 import Api.Endpoint exposing (Endpoint, toUrl)
 import Http
@@ -12,13 +12,27 @@ type alias RequestResponse body =
     RemoteData.RemoteData (Http.Detailed.Error String) ( Http.Metadata, body )
 
 
+type alias WebData body =
+    RemoteData.RemoteData (List String) body
+
+
 
 -- Header Builders
 
 
-credentialsHeader : Credentials -> Http.Header
-credentialsHeader credentials =
-    Http.header "authorization" ("Token " ++ toTokenString credentials)
+credentialsHeader : Maybe Credentials -> List Http.Header
+credentialsHeader maybeCredentials =
+    case maybeCredentials of
+        Just creds ->
+            [ Http.header "authorization" ("Token " ++ toTokenString creds) ]
+
+        Nothing ->
+            []
+
+
+mapSuccess : (a -> b) -> WebData a -> WebData b
+mapSuccess mapper webData =
+    RemoteData.map mapper webData
 
 
 
@@ -28,7 +42,7 @@ credentialsHeader credentials =
 type alias RequestOptions msg model =
     { endpoint : Endpoint
     , credentials : Maybe Credentials
-    , toMsg : RequestResponse model -> msg
+    , toMsg : WebData model -> msg
     , decoder : Decoder model
     }
 
@@ -36,9 +50,9 @@ type alias RequestOptions msg model =
 type alias RequestOptionsWithBody msg model =
     { endpoint : Endpoint
     , credentials : Maybe Credentials
-    , toMsg : RequestResponse model -> msg
+    , toMsg : WebData model -> msg
     , decoder : Decoder model
-    , body : Http.Body
+    , body : Maybe Http.Body
     }
 
 
@@ -49,15 +63,9 @@ get { endpoint, credentials, toMsg, decoder } =
         , method = "GET"
         , timeout = Nothing
         , tracker = Nothing
-        , headers =
-            case credentials of
-                Just creds ->
-                    [ credentialsHeader creds ]
-
-                Nothing ->
-                    []
+        , headers = credentialsHeader credentials
         , body = Http.emptyBody
-        , expect = Http.Detailed.expectJson (RemoteData.fromResult >> toMsg) decoder
+        , expect = Http.Detailed.expectJson (mapResponseErrors >> toMsg) decoder
         }
 
 
@@ -68,15 +76,9 @@ post { endpoint, credentials, toMsg, decoder, body } =
         , method = "POST"
         , timeout = Nothing
         , tracker = Nothing
-        , body = body
-        , headers =
-            case credentials of
-                Just creds ->
-                    [ credentialsHeader creds ]
-
-                Nothing ->
-                    []
-        , expect = Http.Detailed.expectJson (RemoteData.fromResult >> toMsg) decoder
+        , body = Maybe.withDefault Http.emptyBody body
+        , headers = credentialsHeader credentials
+        , expect = Http.Detailed.expectJson (mapResponseErrors >> toMsg) decoder
         }
 
 
@@ -87,20 +89,32 @@ put { endpoint, credentials, toMsg, decoder, body } =
         , method = "PUT"
         , timeout = Nothing
         , tracker = Nothing
-        , body = body
-        , headers =
-            case credentials of
-                Just creds ->
-                    [ credentialsHeader creds ]
+        , body = Maybe.withDefault Http.emptyBody body
+        , headers = credentialsHeader credentials
+        , expect = Http.Detailed.expectJson (mapResponseErrors >> toMsg) decoder
+        }
 
-                Nothing ->
-                    []
-        , expect = Http.Detailed.expectJson (RemoteData.fromResult >> toMsg) decoder
+
+delete : RequestOptions msg model -> Cmd msg
+delete { endpoint, credentials, toMsg, decoder } =
+    Http.request
+        { url = toUrl endpoint
+        , method = "DELETE"
+        , timeout = Nothing
+        , tracker = Nothing
+        , body = Http.emptyBody
+        , headers = credentialsHeader credentials
+        , expect = Http.Detailed.expectJson (mapResponseErrors >> toMsg) decoder
         }
 
 
 
 -- Errors
+
+
+mapResponseErrors : Result (Http.Detailed.Error String) ( a, b ) -> RemoteData.RemoteData (List String) b
+mapResponseErrors =
+    RemoteData.fromResult >> RemoteData.mapBoth Tuple.second decodeErrors
 
 
 decodeErrors : Http.Detailed.Error String -> List String

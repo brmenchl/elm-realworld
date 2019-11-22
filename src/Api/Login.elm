@@ -1,6 +1,6 @@
 module Api.Login exposing (LoginCredentials, loginRequest, toLoginCredentials)
 
-import Api exposing (RequestResponse)
+import Api exposing (WebData)
 import Api.Endpoint as Endpoint
 import Http
 import Json.Encode exposing (Value, object, string)
@@ -16,12 +16,12 @@ toLoginCredentials email password =
     LoginCredentials email password
 
 
-loginRequest : (RequestResponse User -> msg) -> LoginCredentials -> Cmd msg
+loginRequest : (WebData User -> msg) -> LoginCredentials -> Cmd msg
 loginRequest toMsg loginCredentials =
     Api.post
         { endpoint = Endpoint.login
         , credentials = Nothing
-        , body = Http.jsonBody (loginCredentialsEncoder loginCredentials)
+        , body = Just <| Http.jsonBody (loginCredentialsEncoder loginCredentials)
         , toMsg = toMsg
         , decoder = User.decoder
         }
