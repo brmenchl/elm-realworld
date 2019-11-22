@@ -1,10 +1,11 @@
 module Page.Article exposing (Model, Msg, init, toSession, update, view)
 
 import Api exposing (WebData)
-import Api.Article exposing (loadArticleRequest)
+import Api.Article exposing (favoriteArticleRequest, loadArticleRequest, unfavoriteArticleRequest)
 import DateFormat
 import Html exposing (Html, a, button, div, form, h1, h2, hr, i, img, p, span, text, textarea)
 import Html.Attributes exposing (class, href, id, placeholder, rows)
+import Html.Events exposing (onClick)
 import Html.Extra as Html
 import Image exposing (defaultAvatar, src)
 import Markdown
@@ -15,6 +16,7 @@ import Model.Username as Username
 import RemoteData exposing (RemoteData(..))
 import Route
 import Time
+import Util
 
 
 type alias Model =
@@ -40,12 +42,33 @@ init session slug =
 
 type Msg
     = CompletedLoadArticle (WebData Article)
+    | ToggledFavoritedArticle
+    | CompletedToggleFavoriteArticle (WebData Article)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CompletedLoadArticle article ->
+            ( { model | article = article }, Cmd.none )
+
+        ToggledFavoritedArticle ->
+            case ( model.session.user, model.article ) of
+                ( Just user, Success article ) ->
+                    let
+                        toggleFavoriteArticleRequest request =
+                            request CompletedToggleFavoriteArticle user.credentials article.slug
+                    in
+                    if article.favorited then
+                        ( model, toggleFavoriteArticleRequest unfavoriteArticleRequest )
+
+                    else
+                        ( model, toggleFavoriteArticleRequest favoriteArticleRequest )
+
+                _ ->
+                    ( model, Route.replaceUrl model.session.key Route.Login )
+
+        CompletedToggleFavoriteArticle article ->
             ( { model | article = article }, Cmd.none )
 
 
@@ -128,7 +151,7 @@ articleActions article =
                 [ i [ class "ion-plus-round" ] []
                 , text <| "Follow " ++ Username.toString author.username
                 ]
-            , button [ class "btn btn-sm btn-outline-primary" ]
+            , button [ class "btn btn-sm btn-outline-primary", onClick ToggledFavoritedArticle ]
                 [ i [ class "ion-heart" ] []
                 , text "Favorite Post"
                 , span [ class "counter" ] [ text ("(" ++ String.fromInt article.favoritesCount ++ ")") ]
@@ -165,7 +188,7 @@ banner article =
                     [ i [ class "ion-plus-round" ] []
                     , text <| "Follow " ++ Username.toString author.username
                     ]
-                , button [ class "btn btn-sm btn-outline-primary" ]
+                , button [ class "btn btn-sm btn-outline-primary", onClick ToggledFavoritedArticle ]
                     [ i [ class "ion-heart" ] []
                     , text "Favorite Post"
                     , span [ class "counter" ] [ text ("(" ++ String.fromInt article.favoritesCount ++ ")") ]
