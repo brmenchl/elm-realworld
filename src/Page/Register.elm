@@ -1,7 +1,7 @@
 module Page.Register exposing (Model, Msg, init, toSession, update, view)
 
 import Api exposing (WebData)
-import Api.Register exposing (registerRequest, toRegisterCredentials)
+import Api.User exposing (registerRequest)
 import Form exposing (Validator, all, atLeastMinimum, atMostMaximum, firstOf, fromValid, required, validate)
 import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, text, ul)
 import Html.Attributes exposing (class, placeholder, type_, value)
@@ -79,7 +79,7 @@ update msg model =
                             fromValid validForm
                     in
                     ( { model | problems = [] }
-                    , registerRequest CompletedRegister (toRegisterCredentials form.username form.email form.password)
+                    , registerRequest CompletedRegister form
                     )
 
                 Err problems ->

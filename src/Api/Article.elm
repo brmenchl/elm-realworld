@@ -3,9 +3,8 @@ module Api.Article exposing (favoriteArticleRequest, feedArticlesRequest, listAr
 import Api exposing (WebData)
 import Api.Endpoint as Endpoint
 import Json.Decode exposing (field, list)
-import Model.Article as Article exposing (Article)
+import Model.Article as Article exposing (Article, Slug)
 import Model.Credentials exposing (Credentials)
-import Model.Slug exposing (Slug)
 import Url.Builder exposing (QueryParameter)
 
 

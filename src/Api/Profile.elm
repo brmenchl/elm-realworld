@@ -2,6 +2,7 @@ module Api.Profile exposing (loadProfileRequest)
 
 import Api exposing (WebData)
 import Api.Endpoint as Endpoint
+import Json.Decode exposing (field)
 import Model.Profile as Profile exposing (Profile)
 import Model.Username exposing (Username)
 
@@ -12,5 +13,5 @@ loadProfileRequest toMsg username =
         { endpoint = Endpoint.profile username
         , credentials = Nothing
         , toMsg = toMsg
-        , decoder = Profile.decoder
+        , decoder = field "profile" Profile.decoder
         }

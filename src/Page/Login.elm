@@ -1,7 +1,7 @@
 module Page.Login exposing (Model, Msg, init, toSession, update, view)
 
 import Api exposing (WebData)
-import Api.Login exposing (loginRequest, toLoginCredentials)
+import Api.User exposing (loginRequest)
 import Form exposing (Validator, all, fromValid, required, validate)
 import Html exposing (Html, a, button, div, fieldset, form, h1, input, li, p, text, ul)
 import Html.Attributes exposing (class, placeholder, type_)
@@ -72,7 +72,7 @@ update msg model =
                             fromValid validForm
                     in
                     ( { model | problems = [] }
-                    , loginRequest CompletedLogin (toLoginCredentials form.email form.password)
+                    , loginRequest CompletedLogin form
                     )
 
                 Err problems ->

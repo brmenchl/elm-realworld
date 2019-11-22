@@ -120,6 +120,13 @@ mapResponseErrors =
 decodeErrors : Http.Detailed.Error String -> List String
 decodeErrors error =
     case error of
+        Http.Detailed.BadBody _ _ errorString ->
+            let
+                log =
+                    Debug.log "Error" errorString
+            in
+            [ "Server Error" ]
+
         Http.Detailed.BadStatus _ body ->
             case decodeString errorDecoder body of
                 Ok errors ->

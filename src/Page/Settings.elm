@@ -1,7 +1,7 @@
 module Page.Settings exposing (Model, Msg, init, toSession, update, view)
 
 import Api exposing (WebData)
-import Api.Register exposing (updateUserRequest)
+import Api.User exposing (updateUserRequest)
 import Form exposing (Validator, all, atLeastMinimum, atMostMaximum, firstOf, fromValid, required, validate)
 import Html exposing (Html, button, div, fieldset, form, h1, hr, input, text, textarea)
 import Html.Attributes exposing (class, placeholder, rows, type_, value)

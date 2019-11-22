@@ -16,10 +16,8 @@ type alias Profile =
 
 decoder : Decoder Profile
 decoder =
-    field "profile"
-        (Decode.succeed Profile
-            |> required "username" Username.decoder
-            |> required "bio" (nullable string)
-            |> optional "image" Image.decoder defaultAvatar
-            |> required "following" bool
-        )
+    Decode.succeed Profile
+        |> required "username" Username.decoder
+        |> required "bio" (nullable string)
+        |> optional "image" Image.decoder defaultAvatar
+        |> required "following" bool

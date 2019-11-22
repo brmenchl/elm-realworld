@@ -1,12 +1,12 @@
-module Model.Article exposing (Article, decoder, updateFavorited)
+module Model.Article exposing (Article, Slug, decoder, slugToString, toString, updateFavorited, urlParser)
 
-import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
+import Json.Decode as Decode exposing (Decoder, bool, int, list, map, string)
 import Json.Decode.Extra exposing (datetime)
 import Json.Decode.Pipeline exposing (required)
-import Model.Author as Author exposing (Author)
-import Model.Slug as Slug exposing (Slug)
+import Model.Profile as Profile exposing (Profile)
 import Model.Tag as Tag exposing (Tag)
 import Time
+import Url.Parser
 
 
 type alias Article =
@@ -15,11 +15,30 @@ type alias Article =
     , createdAt : Time.Posix
     , favoritesCount : Int
     , favorited : Bool
-    , author : Author
+    , author : Profile
     , body : String
     , tags : List Tag
     , slug : Slug
     }
+
+
+type Slug
+    = Slug String
+
+
+toString : Article -> String
+toString article =
+    article.title
+
+
+slugToString : Slug -> String
+slugToString (Slug slug) =
+    slug
+
+
+urlParser : Url.Parser.Parser (Slug -> a) a
+urlParser =
+    Url.Parser.custom "SLUG" (Just << Slug)
 
 
 updateFavorited : Bool -> Article -> Article
@@ -35,7 +54,7 @@ decoder =
         |> required "createdAt" datetime
         |> required "favoritesCount" int
         |> required "favorited" bool
-        |> required "author" Author.decoder
+        |> required "author" Profile.decoder
         |> required "body" string
         |> required "tagList" (list Tag.decoder)
-        |> required "slug" Slug.decoder
+        |> required "slug" (map Slug string)

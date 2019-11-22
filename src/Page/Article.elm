@@ -9,9 +9,8 @@ import Html.Events exposing (onClick)
 import Html.Extra as Html
 import Image exposing (defaultAvatar, src)
 import Markdown
-import Model.Article exposing (Article)
+import Model.Article as Article exposing (Article, Slug)
 import Model.Session exposing (Session)
-import Model.Slug as Slug exposing (Slug)
 import Model.Username as Username
 import RemoteData exposing (RemoteData(..))
 import Route
@@ -78,7 +77,7 @@ update msg model =
 
 view : Model -> { title : String, content : Html Msg }
 view model =
-    { title = Slug.toString model.slug
+    { title = RemoteData.withDefault "Article" <| RemoteData.map Article.toString model.article
     , content = content model
     }
 

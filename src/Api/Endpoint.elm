@@ -1,6 +1,6 @@
 module Api.Endpoint exposing (Endpoint, article, articleFavorite, articles, feed, login, profile, tags, toUrl, user, users)
 
-import Model.Slug as Slug exposing (Slug)
+import Model.Article as Article exposing (Slug)
 import Model.Username as Username exposing (Username)
 import Url.Builder exposing (QueryParameter)
 
@@ -55,12 +55,12 @@ feed params =
 
 article : Slug -> Endpoint
 article slug =
-    fromUrlPieces [ "articles", Slug.toString slug ] []
+    fromUrlPieces [ "articles", Article.slugToString slug ] []
 
 
 articleFavorite : Slug -> Endpoint
 articleFavorite slug =
-    fromUrlPieces [ "articles", Slug.toString slug, "favorite" ] []
+    fromUrlPieces [ "articles", Article.slugToString slug, "favorite" ] []
 
 
 tags : Endpoint

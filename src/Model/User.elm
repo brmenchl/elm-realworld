@@ -18,7 +18,6 @@ type alias User =
 
 decoder : Decoder User
 decoder =
-    field "user"
         (Decode.succeed User
             |> required "email" string
             |> required "token" Credentials.decoder
